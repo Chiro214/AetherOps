@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { GoogleGenAI } from "@google/genai";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -12,9 +13,7 @@ interface Finding {
 
 export async function POST(req: NextRequest) {
   try {
-    // Dynamically import OpenAI to avoid build-time issues
-    const { default: OpenAI } = await import("openai");
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
     // Validate inputs
     const body = await req.json();
@@ -41,15 +40,12 @@ export async function POST(req: NextRequest) {
 
     const resolvedContractName = contract_name || "Unknown Contract";
 
-    // ── Call OpenAI to scan for vulnerabilities ─────────────────────────
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      temperature: 0.1,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content: `You are a contract compliance and VAPT (Vulnerability Assessment) specialist. Analyse the following contract text for business and legal vulnerabilities.
+    // ── Call Gemini to scan for vulnerabilities ─────────────────────────
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: contract_text,
+        config: {
+            systemInstruction: `You are a contract compliance and VAPT (Vulnerability Assessment) specialist. Analyse the following contract text for business and legal vulnerabilities.
 
 Look specifically for:
 - Missing GDPR / data protection clauses
@@ -68,16 +64,19 @@ Return a JSON object with a single key "findings" containing an array of objects
 
 If no vulnerabilities are found, return { "findings": [] }.
 Return ONLY valid JSON, no additional text.`,
-        },
-        {
-          role: "user",
-          content: contract_text,
-        },
-      ],
+            responseMimeType: "application/json",
+            temperature: 0.1,
+        }
     });
 
-    const aiResponseText = completion.choices[0]?.message?.content || "{}";
-    const aiResult = JSON.parse(aiResponseText) as { findings?: Finding[] };
+    const aiResponseText = response.text || "{}";
+    let aiResult: { findings?: Finding[] } = {};
+    
+    try {
+        aiResult = JSON.parse(aiResponseText);
+    } catch(e) {
+        console.error("Failed to parse Gemini JSON output:", aiResponseText);
+    }
     const findings: Finding[] = aiResult.findings || [];
 
     // ── Insert vulnerabilities into contract_vulnerabilities ─────────────

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase";
+import { GoogleGenAI } from "@google/genai";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   try {
-    // Dynamically import OpenAI to avoid build-time issues
-    const { default: OpenAI } = await import("openai");
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || "" });
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
     // Validate inputs
     const body = await req.json();
@@ -32,37 +31,37 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ── Call OpenAI to analyse the transcript ───────────────────────────
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content: `You are an AI CRM analyst. Analyse the following meeting/call transcript and extract structured deal intelligence.
+    // ── Call Gemini to analyse the transcript ───────────────────────────
+    const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: transcript,
+        config: {
+            systemInstruction: `You are an AI CRM analyst. Analyse the following meeting/call transcript and extract structured deal intelligence.
 Return a JSON object with these fields:
 - "deal_id": the deal ID if mentioned, otherwise null
 - "extracted_budget": the budget/deal value as a number (no currency symbols), or null
-- "new_stage": one of "discovery", "negotiation", "security_review", "closed" based on context, or null
+- "new_stage": one of "Discovery", "Negotiation", "Security Review", or "Closed" based on context, or null
 - "ai_summary": a concise 1-2 sentence summary of the key takeaways
 
 Return ONLY valid JSON, no additional text.`,
-        },
-        {
-          role: "user",
-          content: transcript,
-        },
-      ],
+            responseMimeType: "application/json",
+            temperature: 0.2,
+        }
     });
 
-    const aiResponseText = completion.choices[0]?.message?.content || "{}";
-    const aiResult = JSON.parse(aiResponseText) as {
+    const aiResponseText = response.text || "{}";
+    let aiResult: {
       deal_id?: string | null;
       extracted_budget?: number | null;
       new_stage?: string | null;
       ai_summary?: string | null;
-    };
+    } = {};
+
+    try {
+        aiResult = JSON.parse(aiResponseText);
+    } catch (e) {
+        console.error("Failed to parse Gemini JSON output:", aiResponseText);
+    }
 
     // Use provided deal_id or the one extracted by AI
     const resolvedDealId = deal_id || aiResult.deal_id;
