@@ -180,6 +180,236 @@ export interface Database {
           applied_at?: string
         }
       }
+      sf_profiles: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+        }
+      }
+      sf_roles: {
+        Row: {
+          id: string
+          name: string
+          parent_role_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          parent_role_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          parent_role_id?: string | null
+          created_at?: string
+        }
+      }
+      sf_users: {
+        Row: {
+          id: string
+          first_name: string
+          last_name: string
+          alias: string
+          email: string
+          username: string
+          nickname: string | null
+          title: string | null
+          company: string | null
+          department: string | null
+          role_id: string | null
+          profile_id: string | null
+          is_active: boolean | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          first_name: string
+          last_name: string
+          alias: string
+          email: string
+          username: string
+          nickname?: string | null
+          title?: string | null
+          company?: string | null
+          department?: string | null
+          role_id?: string | null
+          profile_id?: string | null
+          is_active?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          first_name?: string
+          last_name?: string
+          alias?: string
+          email?: string
+          username?: string
+          nickname?: string | null
+          title?: string | null
+          company?: string | null
+          department?: string | null
+          role_id?: string | null
+          profile_id?: string | null
+          is_active?: boolean | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      sf_objects: {
+        Row: {
+          id: string
+          label: string
+          plural_label: string
+          api_name: string
+          is_custom: boolean
+          description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          label: string
+          plural_label: string
+          api_name: string
+          is_custom?: boolean
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          label?: string
+          plural_label?: string
+          api_name?: string
+          is_custom?: boolean
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      sf_fields: {
+        Row: {
+          id: string
+          object_id: string
+          field_label: string
+          field_api_name: string
+          data_type: 'Text' | 'Number' | 'Picklist' | 'Checkbox' | 'Date' | 'Lookup'
+          target_object_id: string | null
+          is_required: boolean
+          is_custom: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          object_id: string
+          field_label: string
+          field_api_name: string
+          data_type: 'Text' | 'Number' | 'Picklist' | 'Checkbox' | 'Date' | 'Lookup'
+          target_object_id?: string | null
+          is_required?: boolean
+          is_custom?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          object_id?: string
+          field_label?: string
+          field_api_name?: string
+          data_type?: 'Text' | 'Number' | 'Picklist' | 'Checkbox' | 'Date' | 'Lookup'
+          target_object_id?: string | null
+          is_required?: boolean
+          is_custom?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      sf_records: {
+        Row: {
+          id: string
+          object_id: string
+          owner_id: string | null
+          record_data: any
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          object_id: string
+          owner_id?: string | null
+          record_data?: any
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          object_id?: string
+          owner_id?: string | null
+          record_data?: any
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      sf_activities: {
+        Row: {
+          id: string
+          record_id: string
+          user_id: string | null
+          type: 'Call' | 'Email' | 'Note' | 'Meeting'
+          subject: string
+          description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          record_id: string
+          user_id?: string | null
+          type: 'Call' | 'Email' | 'Note' | 'Meeting'
+          subject: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          record_id?: string
+          user_id?: string | null
+          type?: 'Call' | 'Email' | 'Note' | 'Meeting'
+          subject?: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
     }
   }
 }

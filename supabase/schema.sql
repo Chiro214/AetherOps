@@ -112,3 +112,121 @@ $$ language 'plpgsql';
 
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- SF ARCHITECTURE (PROVISIONING ENGINE)
+
+-- PROFILES
+CREATE TABLE sf_profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT UNIQUE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- ROLES
+CREATE TABLE sf_roles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT UNIQUE NOT NULL,
+    parent_role_id UUID REFERENCES sf_roles(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- USERS (SF Native)
+CREATE TABLE sf_users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    alias TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    username TEXT UNIQUE NOT NULL,
+    nickname TEXT,
+    title TEXT,
+    company TEXT,
+    department TEXT,
+    role_id UUID REFERENCES sf_roles(id) ON DELETE SET NULL,
+    profile_id UUID REFERENCES sf_profiles(id) ON DELETE SET NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE sf_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sf_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sf_users ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow authenticated users full access to sf_profiles" ON sf_profiles FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow authenticated users full access to sf_roles" ON sf_roles FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow authenticated users full access to sf_users" ON sf_users FOR ALL TO authenticated USING (true);
+
+CREATE TRIGGER update_sf_users_updated_at BEFORE UPDATE ON sf_users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- METADATA ENGINE (OBJECT MANAGER)
+CREATE TABLE sf_objects (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    label TEXT NOT NULL,
+    plural_label TEXT NOT NULL,
+    api_name TEXT UNIQUE NOT NULL,
+    is_custom BOOLEAN DEFAULT false,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE sf_fields (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    object_id UUID NOT NULL REFERENCES sf_objects(id) ON DELETE CASCADE,
+    field_label TEXT NOT NULL,
+    field_api_name TEXT NOT NULL,
+    data_type TEXT NOT NULL CHECK (data_type IN ('Text', 'Number', 'Picklist', 'Checkbox', 'Date', 'Lookup')),
+    target_object_id UUID REFERENCES sf_objects(id) ON DELETE SET NULL,
+    is_required BOOLEAN DEFAULT false,
+    is_custom BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(object_id, field_api_name)
+);
+
+ALTER TABLE sf_objects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sf_fields ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow authenticated users full access to sf_objects" ON sf_objects FOR ALL TO authenticated USING (true);
+CREATE POLICY "Allow authenticated users full access to sf_fields" ON sf_fields FOR ALL TO authenticated USING (true);
+
+CREATE TRIGGER update_sf_objects_updated_at BEFORE UPDATE ON sf_objects FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_sf_fields_updated_at BEFORE UPDATE ON sf_fields FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Seed Standard Objects
+INSERT INTO sf_objects (label, plural_label, api_name, is_custom, description) VALUES
+('Account', 'Accounts', 'Account', false, 'Standard object for tracking companies and organizations.'),
+('Contact', 'Contacts', 'Contact', false, 'Standard object for tracking individual people.'),
+('Opportunity', 'Opportunities', 'Opportunity', false, 'Standard object for tracking sales deals.'),
+('Lead', 'Leads', 'Lead', false, 'Standard object for tracking prospects.');
+
+-- UNIVERSAL DATA STORE (RECORDS)
+CREATE TABLE sf_records (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    object_id UUID NOT NULL REFERENCES sf_objects(id) ON DELETE CASCADE,
+    owner_id UUID REFERENCES sf_users(id) ON DELETE SET NULL,
+    record_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE sf_records ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users full access to sf_records" ON sf_records FOR ALL TO authenticated USING (true);
+CREATE TRIGGER update_sf_records_updated_at BEFORE UPDATE ON sf_records FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ACTIVITY TIMELINE
+CREATE TABLE sf_activities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    record_id UUID NOT NULL REFERENCES sf_records(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES sf_users(id) ON DELETE SET NULL,
+    type TEXT NOT NULL CHECK (type IN ('Call', 'Email', 'Note', 'Meeting')),
+    subject TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE sf_activities ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users full access to sf_activities" ON sf_activities FOR ALL TO authenticated USING (true);
+CREATE TRIGGER update_sf_activities_updated_at BEFORE UPDATE ON sf_activities FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Grid, Search, Plus, Settings, Bell, User } from 'lucide-react';
+import { Grid, Search, Plus, Settings, Bell } from 'lucide-react';
 
 export default function GlobalHeader() {
   const [isAppLauncherOpen, setIsAppLauncherOpen] = useState(false);
