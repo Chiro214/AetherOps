@@ -1,4 +1,4 @@
-import CustomerProfile from '@/components/CustomerProfile';
+import Workspace from '@/components/Workspace';
 
 export default function Home() {
   return (
@@ -32,9 +32,9 @@ export default function Home() {
           </div>
         </header>
         
-        {/* Main Workspace - Rendering the 3-column view */}
-        <div className="flex-1 overflow-hidden">
-          <CustomerProfile customer={null} />
+        {/* Main Workspace - Rendering the List/Profile sliding view */}
+        <div className="flex-1 overflow-hidden relative">
+          <Workspace />
         </div>
       </div>
     </main>
