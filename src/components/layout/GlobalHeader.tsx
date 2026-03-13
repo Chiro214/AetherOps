@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Grid, Search, Plus, Settings, Bell } from 'lucide-react';
+import { Grid, Plus, Settings, Bell } from 'lucide-react';
+import GlobalSearch from '@/components/crm/GlobalSearch';
 
 export default function GlobalHeader() {
   const [isAppLauncherOpen, setIsAppLauncherOpen] = useState(false);
@@ -30,16 +31,7 @@ export default function GlobalHeader() {
         </div>
 
         {/* Center: Global Search */}
-        <div className="flex-1 max-w-2xl mx-8">
-          <div className="relative group">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-hover:text-[#0176D3] transition-colors" />
-            <input 
-              type="text" 
-              placeholder="Search Setup, Apps, and Items..." 
-              className="w-full h-8 pl-9 pr-3 bg-gray-100 border border-transparent rounded-md text-sm text-gray-900 focus:bg-white focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] focus:outline-none transition-all placeholder:text-gray-500"
-            />
-          </div>
-        </div>
+        <GlobalSearch />
 
         {/* Right: Actions & Profile */}
         <div className="flex items-center gap-1">
