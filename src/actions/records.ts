@@ -1,8 +1,7 @@
-'use server';
-
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 import { revalidatePath } from 'next/cache';
+import { getObjects } from './metadata';
 
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -130,6 +129,43 @@ export async function searchRecords(objectId: string, searchTerm: string): Promi
     return matches.slice(0, 5);
   } catch (err) {
     console.error('Exception in searchRecords:', err);
+    return [];
+  }
+}
+
+export async function getRelatedRecords(parentObjectId: string, parentRecordId: string): Promise<any[]> {
+  try {
+    const { data: fields, error: fieldsErr } = await (supabaseAdmin.from('sf_fields') as any)
+      .select('*')
+      .eq('target_object_id', parentObjectId)
+      .eq('data_type', 'Lookup');
+
+    if (fieldsErr || !fields || fields.length === 0) return [];
+
+    const allObjects = await getObjects();
+    const groupedResults = [];
+
+    for (const field of fields) {
+      const childObj = allObjects.find((o) => o.id === field.object_id);
+      if (!childObj) continue;
+
+      const { data: records, error: recErr } = await (supabaseAdmin.from('sf_records') as any)
+        .select('id, record_data')
+        .eq('object_id', field.object_id)
+        .contains('record_data', { [field.field_api_name]: parentRecordId });
+
+      if (records && records.length > 0) {
+        groupedResults.push({
+          objectLabel: childObj.plural_label,
+          objectApiName: childObj.api_name,
+          fieldApiName: field.field_api_name,
+          records: records
+        });
+      }
+    }
+    return groupedResults;
+  } catch (err) {
+    console.error('Exception fetching related records:', err);
     return [];
   }
 }
