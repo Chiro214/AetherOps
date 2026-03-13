@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdmin } from "@/lib/supabase";
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/lib/database.types';
 import { GoogleGenAI } from "@google/genai";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+const supabaseAdmin = createClient<Database>(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,39 +17,33 @@ export async function POST(req: NextRequest) {
 
     // Validate inputs
     const body = await req.json();
-    const { transcript, deal_id } = body as {
-      transcript?: string;
-      deal_id?: string;
+    const { customer_id, content, type, direction } = body as {
+      customer_id?: string;
+      content?: string;
+      type?: 'email' | 'chat' | 'call';
+      direction?: 'inbound' | 'outbound';
     };
 
-    if (!transcript || typeof transcript !== "string") {
+    if (!customer_id || !content || !type || !direction) {
       return NextResponse.json(
-        { error: "Missing or invalid 'transcript' field" },
+        { error: "Missing required fields: customer_id, content, type, direction" },
         { status: 400 }
       );
     }
 
-    const supabaseAdmin = getSupabaseAdmin();
-    if (!supabaseAdmin) {
-      return NextResponse.json(
-        { error: "Supabase is not configured" },
-        { status: 500 }
-      );
-    }
-
-    // ── Call Gemini to analyse the transcript ───────────────────────────
+    // ── Call Gemini to analyze the interaction ───────────────────────────
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: transcript,
+        contents: content,
         config: {
-            systemInstruction: `You are an AI CRM analyst. Analyse the following meeting/call transcript and extract structured deal intelligence.
-Return a JSON object with these fields:
-- "deal_id": the deal ID if mentioned, otherwise null
-- "extracted_budget": the budget/deal value as a number (no currency symbols), or null
-- "new_stage": one of "Discovery", "Negotiation", "Security Review", or "Closed" based on context, or null
-- "ai_summary": a concise 1-2 sentence summary of the key takeaways
+            systemInstruction: `You are an AI CRM analyst processing inbound B2C customer communications.
+Analyze the following message and extract:
+1. "ai_summary": A 1-2 sentence concise summary of the message.
+2. "sentiment_score": An integer from 0 (extremely angry/negative) to 100 (extremely happy/positive).
+3. "tags_to_apply": An array of strings representing tags to apply to the customer profile based on this interaction (e.g. ["Complaint", "Churn Risk", "VIP Priority"]).
+4. "draft_reply": If the message is a complaint or question, draft a brief, personalized reply.
 
-Return ONLY valid JSON, no additional text.`,
+Return ONLY valid JSON.`,
             responseMimeType: "application/json",
             temperature: 0.2,
         }
@@ -51,53 +51,40 @@ Return ONLY valid JSON, no additional text.`,
 
     const aiResponseText = response.text || "{}";
     let aiResult: {
-      deal_id?: string | null;
-      extracted_budget?: number | null;
-      new_stage?: string | null;
-      ai_summary?: string | null;
+      ai_summary?: string;
+      sentiment_score?: number;
+      tags_to_apply?: string[];
+      draft_reply?: string;
     } = {};
 
     try {
         aiResult = JSON.parse(aiResponseText);
-    } catch (e) {
+    } catch {
         console.error("Failed to parse Gemini JSON output:", aiResponseText);
     }
 
-    // Use provided deal_id or the one extracted by AI
-    const resolvedDealId = deal_id || aiResult.deal_id;
+    // Insert the interaction log
+    const { error: intError } = await supabaseAdmin
+      .from('interactions')
+      .insert({
+        customer_id,
+        direction,
+        type,
+        content,
+        sentiment_score: aiResult.sentiment_score ?? null,
+        ai_summary: aiResult.ai_summary ?? null
+      });
 
-    // ── Update the deal if we have a deal_id ────────────────────────────
-    if (resolvedDealId) {
-      const updatePayload: Record<string, unknown> = {};
-      if (aiResult.new_stage) updatePayload.column_name = aiResult.new_stage;
-      if (aiResult.extracted_budget)
-        updatePayload.value = aiResult.extracted_budget;
-      if (aiResult.ai_summary) updatePayload.ai_summary = aiResult.ai_summary;
-
-      if (Object.keys(updatePayload).length > 0) {
-        await supabaseAdmin
-          .from("deals")
-          .update(updatePayload)
-          .eq("id", resolvedDealId);
-      }
+    if (intError) {
+      console.error("Supabase insert error:", intError);
+      return NextResponse.json({ error: "Failed to log interaction" }, { status: 500 });
     }
 
-    // ── Insert into intelligence_logs ───────────────────────────────────
-    await supabaseAdmin.from("intelligence_logs").insert({
-      type: "call",
-      title: resolvedDealId
-        ? `Transcript Analysed — Deal ${resolvedDealId}`
-        : "Transcript Analysed",
-      summary:
-        aiResult.ai_summary || "Transcript processed. No key insights extracted.",
-    });
+    // We can also handle tags here if needed in the future
 
     return NextResponse.json({
       success: true,
-      deal_id: resolvedDealId,
-      extracted_budget: aiResult.extracted_budget,
-      new_stage: aiResult.new_stage,
-      ai_summary: aiResult.ai_summary,
+      analysis: aiResult
     });
   } catch (error) {
     console.error("[/api/ingest] Error:", error);
