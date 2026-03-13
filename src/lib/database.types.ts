@@ -371,7 +371,7 @@ export interface Database {
           id: string
           record_id: string
           user_id: string | null
-          type: 'Call' | 'Email' | 'Note' | 'Meeting'
+          type: string
           subject: string
           description: string | null
           created_at: string
@@ -381,7 +381,7 @@ export interface Database {
           id?: string
           record_id: string
           user_id?: string | null
-          type: 'Call' | 'Email' | 'Note' | 'Meeting'
+          type: string
           subject: string
           description?: string | null
           created_at?: string
@@ -391,12 +391,72 @@ export interface Database {
           id?: string
           record_id?: string
           user_id?: string | null
-          type?: 'Call' | 'Email' | 'Note' | 'Meeting'
+          type?: string
           subject?: string
           description?: string | null
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "sf_activities_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "sf_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sf_activities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "sf_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sf_flows: {
+        Row: {
+          id: string
+          name: string
+          object_id: string
+          trigger_type: 'onCreate' | 'onUpdate' | 'onSave'
+          conditions: any
+          actions: any
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          object_id: string
+          trigger_type: 'onCreate' | 'onUpdate' | 'onSave'
+          conditions?: any
+          actions?: any
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          object_id?: string
+          trigger_type?: 'onCreate' | 'onUpdate' | 'onSave'
+          conditions?: any
+          actions?: any
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sf_flows_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "sf_objects"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {

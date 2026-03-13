@@ -230,3 +230,20 @@ CREATE TABLE sf_activities (
 ALTER TABLE sf_activities ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow authenticated users full access to sf_activities" ON sf_activities FOR ALL TO authenticated USING (true);
 CREATE TRIGGER update_sf_activities_updated_at BEFORE UPDATE ON sf_activities FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- PROCESS AUTOMATION ENGINE (RECORD-TRIGGERED FLOWS)
+CREATE TABLE sf_flows (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    object_id UUID NOT NULL REFERENCES sf_objects(id) ON DELETE CASCADE,
+    trigger_type TEXT NOT NULL CHECK (trigger_type IN ('onCreate', 'onUpdate', 'onSave')),
+    conditions JSONB NOT NULL DEFAULT '{}'::jsonb,
+    actions JSONB NOT NULL DEFAULT '{}'::jsonb,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE sf_flows ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users full access to sf_flows" ON sf_flows FOR ALL TO authenticated USING (true);
+CREATE TRIGGER update_sf_flows_updated_at BEFORE UPDATE ON sf_flows FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
