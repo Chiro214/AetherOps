@@ -1,4 +1,10 @@
-export default function HomePage() {
+import Dashboard from '@/components/crm/Dashboard';
+import { getCoreMetrics, getRecentRecords } from '@/actions/dashboard';
+
+export default async function HomePage() {
+  const metrics = await getCoreMetrics();
+  const recent = await getRecentRecords();
+
   return (
     <div className="bg-white rounded border border-gray-200 shadow-sm h-full flex flex-col overflow-hidden">
       <div className="p-4 border-b border-gray-200">
@@ -7,8 +13,8 @@ export default function HomePage() {
           Sales Pipeline Overview
         </h1>
       </div>
-      <div className="p-8 flex-1 bg-gray-50/50 flex items-center justify-center text-gray-500">
-         [Dashboard Component Placeholder]
+      <div className="p-8 flex-1 bg-[#f3f3f3] overflow-y-auto">
+         <Dashboard metrics={metrics} recent={recent} />
       </div>
     </div>
   );
