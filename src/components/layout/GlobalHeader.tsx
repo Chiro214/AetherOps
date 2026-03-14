@@ -1,12 +1,16 @@
-'use client';
-
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { Grid, Plus, Settings, Bell } from 'lucide-react';
+import { Plus, Settings, Bell } from 'lucide-react';
 import GlobalSearch from '@/components/crm/GlobalSearch';
+import AppLauncherClient from './AppLauncherClient';
+import { getApps, getActiveAppCookie } from '@/actions/apps';
 
-export default function GlobalHeader() {
-  const [isAppLauncherOpen, setIsAppLauncherOpen] = useState(false);
+export default async function GlobalHeader() {
+  const apps = await getApps();
+  const activeAppId = await getActiveAppCookie();
+  
+  const activeApp = apps.find((a: any) => a.id === activeAppId);
+  const appName = activeApp ? (activeApp as any).name : 'AetherOps CRM';
 
   return (
     <>
@@ -15,18 +19,13 @@ export default function GlobalHeader() {
         
         {/* Left: App Launcher & Branding */}
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => setIsAppLauncherOpen(!isAppLauncherOpen)}
-            className="p-1.5 text-gray-500 hover:text-[#0176D3] hover:bg-gray-100 rounded transition-colors"
-            title="App Launcher"
-          >
-            <Grid size={20} />
-          </button>
-          <div className="flex items-center gap-2">
+          <AppLauncherClient apps={apps} />
+          
+          <div className="flex items-center gap-2 border-l border-gray-200 pl-4">
              <div className="w-8 h-8 bg-[#0176D3] rounded flex items-center justify-center text-white font-bold text-xs tracking-tighter">
-               AG
+               AO
              </div>
-             <span className="font-semibold text-gray-900 text-lg hidden sm:block">Antigravity Sales</span>
+             <span className="font-semibold text-gray-900 text-lg hidden sm:block">{appName}</span>
           </div>
         </div>
 
@@ -49,33 +48,6 @@ export default function GlobalHeader() {
           </button>
         </div>
       </header>
-
-      {/* App Launcher Modal Overlay */}
-      {isAppLauncherOpen && (
-        <div className="absolute top-12 left-0 w-80 bg-white border border-gray-200 shadow-xl rounded-b-md z-40 p-4 animate-in fade-in slide-in-from-top-2 duration-200">
-           <h3 className="text-sm font-bold text-gray-900 mb-3">App Launcher</h3>
-           <input 
-             type="text" 
-             placeholder="Search apps and items..." 
-             className="w-full h-8 px-3 mb-4 border border-gray-300 rounded text-sm focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] focus:outline-none"
-             autoFocus
-           />
-           <div className="flex flex-col gap-1">
-              <div className="p-2 hover:bg-gray-50 rounded cursor-pointer group">
-                 <div className="text-sm font-semibold text-[#0176D3] group-hover:underline">Sales Console</div>
-                 <div className="text-xs text-gray-500">Standard sales pipeline management</div>
-              </div>
-              <div className="p-2 hover:bg-gray-50 rounded cursor-pointer group">
-                 <div className="text-sm font-semibold text-[#0176D3] group-hover:underline">Service Console</div>
-                 <div className="text-xs text-gray-500">Ticketing and customer support</div>
-              </div>
-              <div className="p-2 hover:bg-gray-50 rounded cursor-pointer group">
-                 <div className="text-sm font-semibold text-[#0176D3] group-hover:underline">Marketing Cloud</div>
-                 <div className="text-xs text-gray-500">Campaigns and lead generation</div>
-              </div>
-           </div>
-        </div>
-      )}
     </>
   );
 }

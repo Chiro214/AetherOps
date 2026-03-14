@@ -247,3 +247,36 @@ CREATE TABLE sf_flows (
 ALTER TABLE sf_flows ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow authenticated users full access to sf_flows" ON sf_flows FOR ALL TO authenticated USING (true);
 CREATE TRIGGER update_sf_flows_updated_at BEFORE UPDATE ON sf_flows FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- DYNAMIC APP LAUNCHER & WORKSPACES
+CREATE TABLE sf_apps (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE sf_app_tabs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    app_id UUID NOT NULL REFERENCES sf_apps(id) ON DELETE CASCADE,
+    object_id UUID NOT NULL REFERENCES sf_objects(id) ON DELETE CASCADE,
+    display_order INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE sf_apps ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users full access to sf_apps" ON sf_apps FOR ALL TO authenticated USING (true);
+CREATE TRIGGER update_sf_apps_updated_at BEFORE UPDATE ON sf_apps FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE sf_app_tabs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users full access to sf_app_tabs" ON sf_app_tabs FOR ALL TO authenticated USING (true);
+
+-- Seed Initial Apps
+INSERT INTO sf_apps (name, description) VALUES 
+('Sales Console', 'Primary workspace for managing the sales pipeline and opportunities.'),
+('Service Console', 'Workspace for support agents to manage customer cases and tickets.');
+
+-- Optional: Seed Tabs (Requires looking up the exact UUIDs of the seeded objects).
+-- For this scaffold, we will fetch standard objects dynamically in Next.js if no tabs exist for simplicity,
+-- or allow Admins to configure them later.

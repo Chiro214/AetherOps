@@ -15,9 +15,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AetherOps — Autonomous CRM",
-  description:
-    "Zero-input autonomous B2B CRM. AI-powered pipeline management, compliance scanning, and deal intelligence.",
+  title: "AetherOps CRM",
+  description: "A metadata-driven SLDS enterprise CRM engine running on Next.js",
 };
 
 export default function RootLayout({

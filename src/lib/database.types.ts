@@ -458,6 +458,69 @@ export interface Database {
           }
         ]
       }
+      sf_apps: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sf_app_tabs: {
+        Row: {
+          id: string
+          app_id: string
+          object_id: string
+          display_order: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          app_id: string
+          object_id: string
+          display_order?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          app_id?: string
+          object_id?: string
+          display_order?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sf_app_tabs_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "sf_apps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sf_app_tabs_object_id_fkey"
+            columns: ["object_id"]
+            isOneToOne: false
+            referencedRelation: "sf_objects"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never
