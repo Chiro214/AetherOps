@@ -212,7 +212,61 @@ CREATE TABLE sf_records (
 );
 
 ALTER TABLE sf_records ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow authenticated users full access to sf_records" ON sf_records FOR ALL TO authenticated USING (true);
+
+-- Helper to check Admin Profile
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM sf_users u
+    JOIN sf_profiles p ON u.profile_id = p.id
+    WHERE u.id = auth.uid() AND p.name = 'System Administrator'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Recursive CTE to find subordinate users
+CREATE OR REPLACE FUNCTION get_subordinate_users(current_user_id UUID)
+RETURNS SETOF UUID AS $$
+BEGIN
+  RETURN QUERY
+  WITH RECURSIVE subordinates AS (
+      -- Base case: find direct children roles of the current user's role
+      SELECT child.id
+      FROM sf_roles child
+      JOIN sf_users u ON u.role_id = child.parent_role_id
+      WHERE u.id = current_user_id
+  
+      UNION ALL
+  
+      -- Recursive case: find children of children
+      SELECT r.id
+      FROM sf_roles r
+      JOIN subordinates s ON r.parent_role_id = s.id
+  )
+  SELECT u.id
+  FROM sf_users u
+  WHERE u.role_id IN (SELECT id FROM subordinates);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Policy 1: Admin Bypass
+CREATE POLICY "Admin Full Access" ON sf_records
+FOR ALL TO authenticated
+USING (is_admin());
+
+-- Policy 2: Hierarchical Ownership Security
+CREATE POLICY "Users Hierarchical Access" ON sf_records
+FOR ALL TO authenticated
+USING (
+    owner_id = auth.uid() OR 
+    owner_id IN (SELECT get_subordinate_users(auth.uid()))
+)
+WITH CHECK (
+    owner_id = auth.uid() OR 
+    is_admin()
+);
+
 CREATE TRIGGER update_sf_records_updated_at BEFORE UPDATE ON sf_records FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ACTIVITY TIMELINE

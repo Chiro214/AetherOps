@@ -11,13 +11,23 @@ const supabaseAdmin = createClient<Database>(
 
 export async function saveRecord(objectId: string, recordData: Record<string, any>, resourceName: string) {
   try {
-    // In a fully authenticated app, we would derive the owner_id from the session. 
-    // Here we'll leave it null or map to a system user if needed.
+    // Authenticate and enforce owner spoof-proofing using SSR Client for JWT parsing
+    const { createClient } = await import('@/utils/supabase/server');
+    const supabaseSession = await createClient();
+    const { data: { user } } = await supabaseSession.auth.getUser();
+
+    // Force owner_id to equal the server-side authenticated user.id to prevent malicious assignment.
+    // In production, currentUserId must be fully enforced.
+    const currentUserId = user?.id || null;
     
+    // Override any malicious owner_id injection from the frontend payload via hardcode map
+    const finalRecordData = { ...recordData };
+    delete finalRecordData.owner_id; // safeguard
+
     const { data, error } = await (supabaseAdmin.from('sf_records') as any).insert({
       object_id: objectId,
-      record_data: recordData,
-      // owner_id: currentUserId,
+      record_data: finalRecordData,
+      owner_id: currentUserId,
     }).select('id').single();
 
     if (error || !data) {
