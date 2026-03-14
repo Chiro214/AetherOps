@@ -2,18 +2,25 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import { Search } from 'lucide-react';
 import Link from 'next/link';
+import ViewToggle from '@/components/crm/ViewToggle';
+import KanbanBoard from '@/components/crm/KanbanBoard';
 
 export const revalidate = 0;
 
-export default async function DynamicListView({ params }: { params: Promise<{ resource: string }> }) {
+export default async function DynamicListView({ 
+  params,
+  searchParams
+}: { 
+  params: Promise<{ resource: string }>,
+  searchParams: Promise<{ view?: string }>
+}) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const resourceName = resolvedParams.resource;
+  const viewMode = resolvedSearchParams.view === 'kanban' ? 'kanban' : 'table';
   
-  // Basic lookup: In a real app we might query sf_objects matching plural_label, 
-  // but for now let's just assume the URL is lowercase plural (e.g. 'accounts')
-  // and we try to map it to standard objects. Or we can import supabase admin here and query.
-  // Actually we have a getObjectByApiName, maybe we need getObjectByPluralName? Let's add that to actions.
-  // For now, let's write a quick temporary map or fetch all and find the match.
+  // Is this Object allowed to have a Kanban?
+  const isKanbanEnabled = resourceName.toLowerCase() === 'leads' || resourceName.toLowerCase() === 'opportunities';
   const { getObjects, getFieldsForObject } = await import('@/actions/metadata');
   const { getRecordsForObject } = await import('@/actions/records');
   const allObjects = await getObjects();
@@ -43,8 +50,9 @@ export default async function DynamicListView({ params }: { params: Promise<{ re
             </h1>
           </div>
         </div>
-        
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+           {isKanbanEnabled && <ViewToggle />}
+           <div className="w-px h-6 bg-gray-300 mx-2"></div>
            <button className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition-colors">Import</button>
            <Link href={`/${resourceName}/new`} className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0176D3] text-white text-sm font-medium rounded hover:bg-[#014486] transition-colors">
              New {obj.label}
@@ -54,15 +62,21 @@ export default async function DynamicListView({ params }: { params: Promise<{ re
 
       {/* Toolbar */}
       <div className="p-3 border-b border-gray-200 flex items-center justify-between bg-white text-sm">
-         <span className="text-gray-500">{records.length} items • Sorted by Updated At</span>
+         <span className="text-gray-500">
+           {viewMode === 'table' ? `${records.length} items • Sorted by Updated At` : `Kanban Board • Sorted by Stage`}
+         </span>
          <div className="relative">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder={`Search this list...`} className="pl-8 pr-3 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] w-64" />
          </div>
       </div>
 
-      {/* Data Table */}
-      <div className="flex-1 overflow-auto bg-white">
+      {/* Main Canvas Switcher */}
+      {viewMode === 'kanban' && isKanbanEnabled ? (
+         <KanbanWrapper apiName={obj.api_name} resourceName={resourceName} />
+      ) : (
+        /* Data Table */
+        <div className="flex-1 overflow-auto bg-white">
          <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-white z-10 border-b border-gray-200 shadow-sm">
                <tr>
@@ -115,6 +129,29 @@ export default async function DynamicListView({ params }: { params: Promise<{ re
             </tbody>
          </table>
       </div>
+      )}
+    </div>
+  );
+}
+
+// Sub-component to isolate Kanban data fetching
+async function KanbanWrapper({ apiName, resourceName }: { apiName: string, resourceName: string }) {
+  const { getKanbanData, getPicklistOptions } = await import('@/actions/kanban');
+  
+  // Define default grouping fields per object for the scaffold
+  const groupByField = resourceName.toLowerCase() === 'leads' ? 'Status' : 'StageName';
+  
+  const initialData = await getKanbanData(apiName, groupByField);
+  const columns = await getPicklistOptions(apiName, groupByField);
+
+  return (
+    <div className="flex-1 bg-white p-4 overflow-hidden">
+      <KanbanBoard 
+        initialData={initialData} 
+        columns={columns} 
+        resourceName={resourceName} 
+        groupByField={groupByField} 
+      />
     </div>
   );
 }
