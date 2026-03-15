@@ -354,3 +354,17 @@ USING (owner_id = auth.uid() OR is_admin())
 WITH CHECK (owner_id = auth.uid() OR is_admin());
 
 CREATE TRIGGER update_sf_reports_updated_at BEFORE UPDATE ON sf_reports FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- DYNAMIC PAGE LAYOUT ENGINE
+CREATE TABLE sf_layouts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    object_id UUID NOT NULL REFERENCES sf_objects(id) ON DELETE CASCADE,
+    layout_name TEXT NOT NULL,
+    layout_config JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE sf_layouts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow authenticated users full access to sf_layouts" ON sf_layouts FOR ALL TO authenticated USING (true);
+CREATE TRIGGER update_sf_layouts_updated_at BEFORE UPDATE ON sf_layouts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

@@ -1,6 +1,7 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import DynamicFormClient from '@/components/crm/DynamicFormClient';
+import { getLayoutForObject } from '@/actions/layouts';
 
 export const revalidate = 0;
 
@@ -17,6 +18,7 @@ export default async function NewRecordPage({ params }: { params: Promise<{ reso
   }
 
   const fields = await getFieldsForObject(obj.id);
+  const layoutConfig = await getLayoutForObject(obj.id);
 
   return (
     <div className="p-8 h-full bg-[#f3f3f3] flex items-center justify-center overflow-auto">
@@ -33,7 +35,13 @@ export default async function NewRecordPage({ params }: { params: Promise<{ reso
 
         {/* Modal Body / Client component injected here */}
         <div className="p-6 flex-1 overflow-y-auto bg-white">
-          <DynamicFormClient objectId={obj.id} objectLabel={obj.label} fields={fields} resourceName={resourceName} />
+          <DynamicFormClient 
+            objectId={obj.id} 
+            objectLabel={obj.label} 
+            fields={fields} 
+            resourceName={resourceName} 
+            layoutConfig={layoutConfig}
+          />
         </div>
       </div>
     </div>

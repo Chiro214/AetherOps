@@ -2,6 +2,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import DynamicFormClient from '@/components/crm/DynamicFormClient';
 import { getRecordById } from '@/actions/records';
+import { getLayoutForObject } from '@/actions/layouts';
 
 export const revalidate = 0;
 
@@ -29,6 +30,7 @@ export default async function DynamicRecordEditView({ params }: { params: Promis
 
   // 3. Fetch input field geometries
   const fields = await getFieldsForObject(obj.id);
+  const layoutConfig = await getLayoutForObject(obj.id);
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-100px)] p-6 bg-[#f3f3f3]">
@@ -47,6 +49,7 @@ export default async function DynamicRecordEditView({ params }: { params: Promis
              resourceName={resourceName} 
              initialData={record.record_data}
              recordId={recordId}
+             layoutConfig={layoutConfig}
           />
         </div>
       </div>

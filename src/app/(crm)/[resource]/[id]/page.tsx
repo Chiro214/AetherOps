@@ -2,6 +2,7 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getRecordById, getRelatedRecords } from '@/actions/records';
+import { getLayoutForObject, ObjectLayoutConfig, LayoutSection } from '@/actions/layouts';
 import ActivityPublisher from '@/components/crm/ActivityPublisher';
 import ActivityTimeline from '@/components/crm/ActivityTimeline';
 import RecordTabs from '@/components/crm/RecordTabs';
@@ -33,6 +34,7 @@ export default async function RecordDetailView({ params }: { params: Promise<{ r
 
   // 3. Fetch fields to define the layout
   const fields = await getFieldsForObject(obj.id);
+  const layoutConfig = await getLayoutForObject(obj.id);
 
   // Derive the primary label (usually the first text field, or just "Name" fallback)
   const primaryLabelField = fields.find((f: any) => f.field_api_name.toLowerCase() === 'name') || fields[0];
@@ -98,30 +100,67 @@ export default async function RecordDetailView({ params }: { params: Promise<{ r
          {/* Left Column: Details Tab (70%) */}
          <RecordTabs 
             detailsContent={
-               <div>
-                  <h2 className="text-base font-bold text-gray-800 mb-6">Information</h2>
-                  <div className="grid grid-cols-2 gap-x-12 gap-y-6">
-                     {fields.map((field: any) => {
-                        const value = record.record_data?.[field.field_api_name];
-                        const isLookup = field.data_type === 'Lookup' && !!value;
-                        const lookupInfo = isLookup ? lookupMap[field.field_api_name] : null;
+               <div className="flex flex-col gap-6">
+                  {layoutConfig && layoutConfig.length > 0 ? (
+                     layoutConfig.map((section: LayoutSection) => (
+                        <div key={section.id} className="flex flex-col">
+                           <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide border-b border-gray-200 pb-2 mb-4">
+                              {section.sectionName}
+                           </h3>
+                           <div className={`grid gap-x-12 gap-y-4 ${section.columns === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                              {section.fields.map((apiName: string) => {
+                                 const field = fields.find((f: any) => f.field_api_name === apiName);
+                                 if (!field) return null; // Fault-tolerant rendering
 
-                        return (
-                           <div key={field.id} className="flex flex-col border-b border-gray-100 pb-2">
-                              <span className="text-xs text-gray-500 font-medium mb-1">{field.field_label}</span>
-                              <span className="text-sm text-gray-900">
-                                 {isLookup && lookupInfo ? (
-                                    <Link href={`/${lookupInfo.resourceName}/${value}`} className="text-[#0176D3] hover:underline">
-                                       {lookupInfo.label}
-                                    </Link>
-                                 ) : value !== undefined && value !== null && value !== '' 
-                                    ? (typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value))
-                                    : '—'}
-                              </span>
+                                 const value = record.record_data?.[field.field_api_name];
+                                 const isLookup = field.data_type === 'Lookup' && !!value;
+                                 const lookupInfo = isLookup ? lookupMap[field.field_api_name] : null;
+
+                                 return (
+                                    <div key={field.id} className="flex flex-col border-b border-gray-100 pb-2">
+                                       <span className="text-xs text-gray-500 font-medium mb-1">{field.field_label}</span>
+                                       <span className="text-sm text-gray-900">
+                                          {isLookup && lookupInfo ? (
+                                             <Link href={`/${lookupInfo.resourceName}/${value}`} className="text-[#0176D3] hover:underline">
+                                                {lookupInfo.label}
+                                             </Link>
+                                          ) : value !== undefined && value !== null && value !== '' 
+                                             ? (typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value))
+                                             : '—'}
+                                       </span>
+                                    </div>
+                                 );
+                              })}
                            </div>
-                        );
-                     })}
-                  </div>
+                        </div>
+                     ))
+                  ) : (
+                     <div>
+                        <h2 className="text-base font-bold text-gray-800 mb-6">Information</h2>
+                        <div className="grid grid-cols-2 gap-x-12 gap-y-6">
+                           {fields.map((field: any) => {
+                              const value = record.record_data?.[field.field_api_name];
+                              const isLookup = field.data_type === 'Lookup' && !!value;
+                              const lookupInfo = isLookup ? lookupMap[field.field_api_name] : null;
+
+                              return (
+                                 <div key={field.id} className="flex flex-col border-b border-gray-100 pb-2">
+                                    <span className="text-xs text-gray-500 font-medium mb-1">{field.field_label}</span>
+                                    <span className="text-sm text-gray-900">
+                                       {isLookup && lookupInfo ? (
+                                          <Link href={`/${lookupInfo.resourceName}/${value}`} className="text-[#0176D3] hover:underline">
+                                             {lookupInfo.label}
+                                          </Link>
+                                       ) : value !== undefined && value !== null && value !== '' 
+                                          ? (typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value))
+                                          : '—'}
+                                    </span>
+                                 </div>
+                              );
+                           })}
+                        </div>
+                     </div>
+                  )}
                </div>
             }
             relatedContent={
