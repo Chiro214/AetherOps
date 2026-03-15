@@ -334,3 +334,23 @@ INSERT INTO sf_apps (name, description) VALUES
 -- Optional: Seed Tabs (Requires looking up the exact UUIDs of the seeded objects).
 -- For this scaffold, we will fetch standard objects dynamically in Next.js if no tabs exist for simplicity,
 -- or allow Admins to configure them later.
+
+-- DYNAMIC REPORTING ENGINE
+CREATE TABLE sf_reports (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL,
+    object_id UUID NOT NULL REFERENCES sf_objects(id) ON DELETE CASCADE,
+    selected_columns JSONB NOT NULL DEFAULT '[]'::jsonb,
+    filters JSONB NOT NULL DEFAULT '[]'::jsonb,
+    owner_id UUID REFERENCES sf_users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE sf_reports ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Reports Ownership Security" ON sf_reports
+FOR ALL TO authenticated
+USING (owner_id = auth.uid() OR is_admin())
+WITH CHECK (owner_id = auth.uid() OR is_admin());
+
+CREATE TRIGGER update_sf_reports_updated_at BEFORE UPDATE ON sf_reports FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
