@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronRight, ChevronDown, User, Shield, Box, Workflow, Home } from 'lucide-react';
+import { ChevronRight, ChevronDown, User, Shield, Box, Workflow, Home, Database } from 'lucide-react';
 
 const MENU = [
   {
@@ -18,6 +18,7 @@ const MENU = [
     items: [
       { label: 'Object Manager', href: '/setup/object-manager', icon: Box },
       { label: 'Flows', href: '/setup/flows', icon: Workflow },
+      { label: 'Data Import', href: '/setup/data-import', icon: Database },
     ]
   }
 ];
