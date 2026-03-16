@@ -32,7 +32,7 @@ export async function getActivitiesForRecord(recordId: string) {
 export async function logActivity(
   recordId: string, 
   resourceName: string,
-  payload: { type: 'Call' | 'Email' | 'Note' | 'Meeting', subject: string, description: string }
+  payload: { type: 'Call' | 'Email' | 'Note' | 'Meeting', subject: string, description: string, activityData?: Record<string, any> }
 ) {
   try {
     const { error } = await (supabaseAdmin.from('sf_activities') as any).insert({
@@ -40,6 +40,7 @@ export async function logActivity(
          type: payload.type,
          subject: payload.subject,
          description: payload.description,
+         activity_data: payload.activityData || {},
          // user_id would be inserted here from auth session usually
       });
 

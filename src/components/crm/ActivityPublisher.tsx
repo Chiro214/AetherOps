@@ -2,12 +2,14 @@
 
 import React, { useState } from 'react';
 import { logActivity } from '@/actions/activities';
-import { Phone, Mail, FileText, Calendar } from 'lucide-react';
+import { sendExternalEmail } from '@/actions/email';
+import { Phone, Mail, FileText, Calendar, Send } from 'lucide-react';
 
 export default function ActivityPublisher({ recordId, resourceName }: { recordId: string, resourceName: string }) {
-  const [activeTab, setActiveTab] = useState<'Call' | 'Note'>('Call');
+  const [activeTab, setActiveTab] = useState<'Call' | 'Note' | 'Email'>('Call');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
+  const [emailTo, setEmailTo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSave = async () => {
@@ -17,18 +19,38 @@ export default function ActivityPublisher({ recordId, resourceName }: { recordId
     }
 
     setIsSubmitting(true);
-    const result = await logActivity(recordId, resourceName, {
-      type: activeTab,
-      subject,
-      description
-    });
-    setIsSubmitting(false);
 
-    if (result.success) {
-      setSubject('');
-      setDescription('');
+    if (activeTab === 'Email') {
+      if (!emailTo.trim()) {
+        alert('Recipient email is required');
+        setIsSubmitting(false);
+        return;
+      }
+      const result = await sendExternalEmail(emailTo, subject, description, recordId, resourceName);
+      setIsSubmitting(false);
+
+      if (result.success) {
+        setSubject('');
+        setDescription('');
+        setEmailTo('');
+        setActiveTab('Call'); // Reset tab or keep on Email? Reset for confirmation
+      } else {
+        alert(`Failed to send email: ${result.error}`);
+      }
     } else {
-      alert(`Failed to log activity: ${result.error}`);
+      const result = await logActivity(recordId, resourceName, {
+        type: activeTab,
+        subject,
+        description
+      });
+      setIsSubmitting(false);
+
+      if (result.success) {
+        setSubject('');
+        setDescription('');
+      } else {
+        alert(`Failed to log activity: ${result.error}`);
+      }
     }
   };
 
@@ -44,18 +66,35 @@ export default function ActivityPublisher({ recordId, resourceName }: { recordId
         </button>
         <button 
           onClick={() => setActiveTab('Note')}
-          className={`flex-1 py-2 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'Note' ? 'text-[#0176D3] bg-white border-b-2 border-b-[#0176D3]' : 'text-gray-600 hover:bg-gray-100'}`}
+          className={`flex-1 py-2 text-sm font-semibold flex items-center justify-center gap-2 border-r border-gray-100 transition-colors ${activeTab === 'Note' ? 'text-[#0176D3] bg-white border-b-2 border-b-[#0176D3]' : 'text-gray-600 hover:bg-gray-100'}`}
         >
           <FileText size={14} /> New Note
+        </button>
+        <button 
+          onClick={() => setActiveTab('Email')}
+          className={`flex-1 py-2 text-sm font-semibold flex items-center justify-center gap-2 transition-colors ${activeTab === 'Email' ? 'text-[#0176D3] bg-white border-b-2 border-b-[#0176D3]' : 'text-gray-600 hover:bg-gray-100'}`}
+        >
+          <Mail size={14} /> Email
         </button>
       </div>
 
       {/* Publisher Body */}
       <div className="p-3">
+        {activeTab === 'Email' && (
+          <div className="mb-3">
+            <input 
+              type="email" 
+              placeholder="To (Recipient Email)" 
+              className="w-full text-sm border border-gray-300 rounded p-1.5 focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] focus:outline-none"
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.target.value)}
+            />
+          </div>
+        )}
         <div className="mb-3">
            <input 
              type="text" 
-             placeholder="Subject" 
+             placeholder={activeTab === 'Email' ? "Subject" : "Subject"} 
              className="w-full text-sm border border-gray-300 rounded p-1.5 focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] focus:outline-none"
              value={subject}
              onChange={(e) => setSubject(e.target.value)}
@@ -63,8 +102,8 @@ export default function ActivityPublisher({ recordId, resourceName }: { recordId
         </div>
         <div className="mb-3">
            <textarea 
-             placeholder="Comments..." 
-             className="w-full text-sm border border-gray-300 rounded p-1.5 focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] focus:outline-none min-h-[80px] resize-y"
+             placeholder={activeTab === 'Email' ? "Email Body..." : "Comments..."} 
+             className="w-full text-sm border border-gray-300 rounded p-1.5 focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] focus:outline-none min-h-[120px] resize-y"
              value={description}
              onChange={(e) => setDescription(e.target.value)}
            />
@@ -73,9 +112,15 @@ export default function ActivityPublisher({ recordId, resourceName }: { recordId
            <button 
              onClick={handleSave}
              disabled={isSubmitting}
-             className="px-4 py-1.5 bg-[#0176D3] text-white text-sm font-medium rounded hover:bg-[#014486] transition-colors disabled:opacity-50"
+             className="px-6 py-1.5 bg-[#0176D3] text-white text-sm font-medium rounded hover:bg-[#014486] transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
            >
-             {isSubmitting ? 'Saving...' : 'Save'}
+             {activeTab === 'Email' ? (
+               <>
+                 <Send size={14} /> {isSubmitting ? 'Sending...' : 'Send Email'}
+               </>
+             ) : (
+               isSubmitting ? 'Saving...' : 'Save'
+             )}
            </button>
         </div>
       </div>
