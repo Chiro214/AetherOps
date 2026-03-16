@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '@/lib/database.types';
 import { revalidatePath } from 'next/cache';
+import { getCurrentUserProfileId, getFLSPermissions, applyFLSReadFilter, validateFLSEditGuard } from '@/utils/fls';
 
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -36,6 +37,13 @@ export async function getKanbanData(apiName: string, groupByField: string) {
 
     if (!records) return [];
 
+    // FLS Read Filter
+    const profileId = await getCurrentUserProfileId();
+    let perms: any[] = [];
+    if (profileId) {
+      perms = await getFLSPermissions(profileId, (objectDef as any).id);
+    }
+
     // Map to a cleaner structure for the Client UI
     return records.map((r: any) => ({
       id: r.id,
@@ -43,7 +51,7 @@ export async function getKanbanData(apiName: string, groupByField: string) {
       // We explicitly extract the group_by value here
       status: r.record_data[groupByField] || 'New',
       // Pass the raw data in case the card needs to display secondary fields
-      raw_data: r.record_data
+      raw_data: profileId ? applyFLSReadFilter(r.record_data, perms) : r.record_data
     }));
 
   } catch (err) {
@@ -71,6 +79,20 @@ export async function updateRecordField(recordId: string, apiName: string, field
        ...((existingRecord as any).record_data as Record<string, any>), 
        [fieldApiName]: newValue 
     };
+
+    // FLS Mutation Guard
+    // We need to resolve the object_id first
+    const { data: recInfo } = await supabaseAdmin.from('sf_records').select('object_id').eq('id', recordId).single();
+    if (recInfo) {
+      const profileId = await getCurrentUserProfileId();
+      if (profileId) {
+        const perms = await getFLSPermissions(profileId, recInfo.object_id);
+        const guard = validateFLSEditGuard({ [fieldApiName]: newValue }, perms);
+        if (!guard.valid) {
+          return { success: false, error: `Unauthorized to edit field: ${fieldApiName}` };
+        }
+      }
+    }
 
     // 3. Commit patched JSONB
     const { error } = await (supabaseAdmin.from('sf_records') as any)

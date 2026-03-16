@@ -3,6 +3,7 @@ import { Database } from '@/lib/database.types';
 import { revalidatePath } from 'next/cache';
 import { getObjects } from './metadata';
 import { logActivity } from './activities';
+import { getCurrentUserProfileId, getFLSPermissions, applyFLSReadFilter, validateFLSEditGuard } from '@/utils/fls';
 
 const supabaseAdmin = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -23,6 +24,16 @@ export async function saveRecord(objectId: string, recordData: Record<string, an
     // Override any malicious owner_id injection from the frontend payload via hardcode map
     const finalRecordData = { ...recordData };
     delete finalRecordData.owner_id; // safeguard
+
+    // FLS Mutation Guard
+    const profileId = await getCurrentUserProfileId();
+    if (profileId) {
+      const perms = await getFLSPermissions(profileId, objectId);
+      const guard = validateFLSEditGuard(finalRecordData, perms);
+      if (!guard.valid) {
+        return { success: false, error: `Unauthorized to edit field: ${guard.field}` };
+      }
+    }
 
     const { data, error } = await (supabaseAdmin.from('sf_records') as any).insert({
       object_id: objectId,
@@ -66,6 +77,15 @@ export async function getRecordsForObject(apiName: string): Promise<any[]> {
       return [];
     }
     
+    // Apply FLS Read Filters
+    const profileId = await getCurrentUserProfileId();
+    if (profileId && data) {
+      const perms = await getFLSPermissions(profileId, obj.id);
+      return data.map(record => ({
+        ...record,
+        record_data: applyFLSReadFilter(record.record_data, perms)
+      }));
+    }
     
     return data || [];
   } catch (err) {
@@ -87,6 +107,16 @@ export async function getRecordById(recordId: string): Promise<any> {
       return null;
     }
 
+    // Apply FLS Read Filter
+    const profileId = await getCurrentUserProfileId();
+    if (profileId && data) {
+       const perms = await getFLSPermissions(profileId, data.object_id);
+       return {
+          ...data,
+          record_data: applyFLSReadFilter(data.record_data, perms)
+       };
+    }
+
     return data;
   } catch (err) {
     console.error('Exception fetching record by id:', err);
@@ -100,6 +130,20 @@ export async function updateRecord(recordId: string, recordData: Record<string, 
       .select('object_id')
       .eq('id', recordId)
       .single();
+
+    if (!existingRecord) {
+      return { success: false, error: 'Record not found' };
+    }
+
+    // FLS Mutation Guard
+    const profileId = await getCurrentUserProfileId();
+    if (profileId) {
+      const perms = await getFLSPermissions(profileId, existingRecord.object_id);
+      const guard = validateFLSEditGuard(recordData, perms);
+      if (!guard.valid) {
+        return { success: false, error: `Unauthorized to edit field: ${guard.field}` };
+      }
+    }
 
     const { error } = await (supabaseAdmin.from('sf_records') as any)
       .update({
@@ -194,7 +238,7 @@ export async function getRelatedRecords(parentObjectId: string, parentRecordId: 
   }
 }
 
-async function executeFlows(objectId: string, recordId: string, recordData: any, triggerEvent: 'onCreate' | 'onUpdate', resourceName: string) {
+export async function executeFlows(objectId: string, recordId: string, recordData: any, triggerEvent: 'onCreate' | 'onUpdate', resourceName: string) {
   try {
     const { data: flows, error } = await (supabaseAdmin.from('sf_flows') as any)
       .select('*')

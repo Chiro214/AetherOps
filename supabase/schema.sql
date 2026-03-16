@@ -368,3 +368,36 @@ CREATE TABLE sf_layouts (
 ALTER TABLE sf_layouts ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow authenticated users full access to sf_layouts" ON sf_layouts FOR ALL TO authenticated USING (true);
 CREATE TRIGGER update_sf_layouts_updated_at BEFORE UPDATE ON sf_layouts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- FIELD LEVEL SECURITY (FLS) ENGINE
+CREATE TABLE sf_field_permissions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    profile_id UUID NOT NULL REFERENCES sf_profiles(id) ON DELETE CASCADE,
+    field_id UUID NOT NULL REFERENCES sf_fields(id) ON DELETE CASCADE,
+    is_readable BOOLEAN NOT NULL DEFAULT true,
+    is_editable BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(profile_id, field_id)
+);
+
+ALTER TABLE sf_field_permissions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow admins to manage field permissions" ON sf_field_permissions FOR ALL TO authenticated USING (is_admin());
+CREATE POLICY "Allow users to view their own field permissions" ON sf_field_permissions FOR SELECT TO authenticated USING (true);
+CREATE TRIGGER update_sf_field_permissions_updated_at BEFORE UPDATE ON sf_field_permissions FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- HEADLESS REST API ENGINE
+CREATE TABLE sf_api_keys (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    key_hash TEXT NOT NULL UNIQUE,
+    owner_id UUID NOT NULL REFERENCES sf_users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE sf_api_keys ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow admins to manage API keys" ON sf_api_keys FOR ALL TO authenticated USING (is_admin());
+CREATE POLICY "Allow users to view their own API keys" ON sf_api_keys FOR SELECT TO authenticated USING (auth.uid() = owner_id);
+CREATE TRIGGER update_sf_api_keys_updated_at BEFORE UPDATE ON sf_api_keys FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
