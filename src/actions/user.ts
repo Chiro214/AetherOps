@@ -45,7 +45,11 @@ export async function createUser(formData: FormData) {
   });
 
   if (error) {
-    console.error('Error creating user:', error);
+    console.warn('AO_DIAGNOSTIC (createUser):', {
+      code: error.code,
+      message: error.message,
+      hint: error.hint
+    });
     return { error: error.message };
   }
 

@@ -31,7 +31,12 @@ export async function getKanbanData(apiName: string, groupByField: string) {
       .eq('object_id', (objectDef as any).id) as any);
 
     if (error) {
-      console.error('getKanbanData Error:', error);
+      console.warn('AO_DIAGNOSTIC (getKanbanData):', {
+        code: error.code,
+        message: error.message,
+        hint: error.hint,
+        apiName
+      });
       return [];
     }
 
@@ -54,8 +59,8 @@ export async function getKanbanData(apiName: string, groupByField: string) {
       raw_data: profileId ? applyFLSReadFilter(r.record_data, perms) : r.record_data
     }));
 
-  } catch (err) {
-    console.error('Exception fetching kanban data:', err);
+  } catch (err: any) {
+    console.warn('Exception fetching kanban data:', err.message || err);
     return [];
   }
 }
@@ -143,7 +148,8 @@ export async function getPicklistOptions(apiName: string, fieldApiName: string) 
       }
 
       return ['New', 'Working', 'Closed']; // Default fallback if field isn't picklist
-   } catch(e) {
+   } catch(e: any) {
+      console.warn('AO_DIAGNOSTIC (getPicklistOptions Fallback):', e.message || e);
       return ['New', 'Working', 'Closed'];
    }
 }

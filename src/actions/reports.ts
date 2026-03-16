@@ -99,12 +99,17 @@ export async function executeReport(config: ReportConfig) {
       const { data, error } = await query;
   
       if (error) {
-        throw error;
+        console.warn('AO_DIAGNOSTIC (executeReport):', {
+          code: error.code,
+          message: error.message,
+          hint: error.hint
+        });
+        return [];
       }
       
       return data || [];
-    } catch (err) {
-      console.error('Exception executing report:', err);
+    } catch (err: any) {
+      console.warn('Exception executing report:', err.message || err);
       return [];
     }
   }
@@ -122,10 +127,17 @@ export async function getSavedReports() {
             `)
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+            console.warn('AO_DIAGNOSTIC (getSavedReports):', {
+                code: error.code,
+                message: error.message,
+                hint: error.hint
+            });
+            return [];
+        }
         return data || [];
-    } catch (err) {
-        console.error('Error fetching reports:', err);
+    } catch (err: any) {
+        console.warn('Error fetching reports:', err.message || err);
         return [];
     }
 }

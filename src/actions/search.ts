@@ -31,7 +31,11 @@ export async function globalSearch(searchTerm: string) {
       .limit(200);
       
     if (error) {
-      console.error('Error in globalSearch fetch:', error);
+      console.warn('AO_DIAGNOSTIC (globalSearch):', {
+        code: error.code,
+        message: error.message,
+        hint: error.hint
+      });
       return {};
     }
     

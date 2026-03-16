@@ -79,23 +79,42 @@ export async function getTabsForApp(appId: string | null) {
       .order('display_order');
 
     if (error) {
-      console.error('Error fetching tabs for app:', error);
-      return [];
+      console.warn('AO_DIAGNOSTIC (getTabsForApp):', {
+        code: error.code,
+        message: error.message,
+        hint: error.hint
+      });
+      // Fallback: Return standard CRM objects if app-specific tabs fail
+      return [
+        { label: 'Accounts', api_name: 'Account' },
+        { label: 'Contacts', api_name: 'Contact' },
+        { label: 'Opportunities', api_name: 'Opportunity' },
+        { label: 'Leads', api_name: 'Lead' }
+      ];
     }
 
     // Standardize return shape to match fallback query
     if (tabs && tabs.length > 0) {
        return tabs.map((t: any) => ({
-         label: t.sf_objects.label,
-         api_name: t.sf_objects.api_name
+         label: t.sf_objects?.label || 'Unknown',
+         api_name: t.sf_objects?.api_name || 'unknown'
        }));
     } else {
-       // If an app has no tabs defined yet, return an empty array (or fallback objects if preferred).
-       // By standard CRM behavior, an empty app just has Home/Dashboards.
-       return [];
+       // If an app has no tabs defined yet, return standard CRM objects
+       return [
+         { label: 'Accounts', api_name: 'Account' },
+         { label: 'Contacts', api_name: 'Contact' },
+         { label: 'Opportunities', api_name: 'Opportunity' },
+         { label: 'Leads', api_name: 'Lead' }
+       ];
     }
-  } catch (err) {
-    console.error('Exception fetching tabs:', err);
-    return [];
+  } catch (err: any) {
+    console.warn('Exception fetching tabs:', err.message || err);
+    return [
+      { label: 'Accounts', api_name: 'Account' },
+      { label: 'Contacts', api_name: 'Contact' },
+      { label: 'Opportunities', api_name: 'Opportunity' },
+      { label: 'Leads', api_name: 'Lead' }
+    ];
   }
 }

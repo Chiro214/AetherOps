@@ -18,13 +18,18 @@ export async function getActivitiesForRecord(recordId: string) {
       .order('created_at', { ascending: false });
 
     if (error) {
-       console.error('Error fetching activities:', error);
+       console.warn('AO_DIAGNOSTIC (getActivitiesForRecord):', {
+         code: error.code,
+         message: error.message,
+         hint: error.hint,
+         recordId
+       });
        return [];
     }
     
     return data || [];
-  } catch (err) {
-    console.error('Exception fetching activities:', err);
+  } catch (err: any) {
+    console.warn('Exception fetching activities:', err.message || err);
     return [];
   }
 }

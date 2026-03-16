@@ -75,7 +75,12 @@ export async function getRecordsForObject(apiName: string): Promise<any[]> {
       .order('created_at', { ascending: false });
       
     if (error) {
-      console.error('Error fetching records:', error);
+      console.warn('AO_DIAGNOSTIC (getRecordsForObject):', {
+        code: error.code,
+        message: error.message,
+        hint: error.hint,
+        apiName
+      });
       return [];
     }
     
@@ -105,7 +110,12 @@ export async function getRecordById(recordId: string): Promise<any> {
       .single();
 
     if (error) {
-      console.error('Error fetching record by id:', error);
+      console.warn('AO_DIAGNOSTIC (getRecordById):', {
+        code: error.code,
+        message: error.message,
+        hint: error.hint,
+        recordId
+      });
       return null;
     }
 
@@ -182,7 +192,12 @@ export async function searchRecords(objectId: string, searchTerm: string): Promi
       .limit(100);
 
     if (error) {
-      console.error('Error in searchRecords:', error);
+      console.warn('AO_DIAGNOSTIC (searchRecords):', {
+        code: error.code,
+        message: error.message,
+        hint: error.hint,
+        objectId
+      });
       return [];
     }
 
