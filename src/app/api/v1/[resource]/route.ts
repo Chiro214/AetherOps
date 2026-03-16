@@ -10,6 +10,18 @@ const supabaseAdmin = createClient<Database>(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
+// CORS Helper
+function corsResponse(response: NextResponse) {
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return response;
+}
+
+export async function OPTIONS() {
+  return corsResponse(new NextResponse(null, { status: 204 }));
+}
+
 /**
  * PHASE 2: Universal REST API Handler
  * Handles GET (Read) and POST (Create) for any AetherOps Object.
@@ -22,7 +34,7 @@ export async function GET(
     const { resource } = await params;
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Missing or invalid Authorization header' }, { status: 401 });
+      return corsResponse(NextResponse.json({ error: 'Missing or invalid Authorization header' }, { status: 401 }));
     }
 
     const token = authHeader.split(' ')[1];
@@ -35,13 +47,13 @@ export async function GET(
       .single();
 
     if (authError || !apiKey || !(apiKey as any).is_active) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return corsResponse(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
     }
 
     // 2. Resolve Metadata
     const obj = await getObjectByApiName(resource);
     if (!obj) {
-      return NextResponse.json({ error: `Resource '${resource}' not found` }, { status: 404 });
+      return corsResponse(NextResponse.json({ error: `Resource '${resource}' not found` }, { status: 404 }));
     }
 
     // 3. Fetch Records (Enforcing RLS manually since we are using admin client)
@@ -53,7 +65,7 @@ export async function GET(
       .eq('owner_id', (apiKey as any).owner_id); // Manual RLS enforcement for API user
 
     if (fetchError) {
-      return NextResponse.json({ error: fetchError.message }, { status: 500 });
+      return corsResponse(NextResponse.json({ error: fetchError.message }, { status: 500 }));
     }
 
     // 4. Resolve FLS for the API User
@@ -64,7 +76,7 @@ export async function GET(
       .single();
 
     if (!userProfile) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 500 });
+      return corsResponse(NextResponse.json({ error: 'User profile not found' }, { status: 500 }));
     }
 
     const perms = await getFLSPermissions((userProfile as any).profile_id, obj.id);
@@ -77,9 +89,9 @@ export async function GET(
       updated_at: rec.updated_at
     }));
 
-    return NextResponse.json({ data: filteredRecords });
+    return corsResponse(NextResponse.json({ data: filteredRecords }));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return corsResponse(NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
 
@@ -91,7 +103,7 @@ export async function POST(
     const { resource } = await params;
     const authHeader = request.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Missing or invalid Authorization header' }, { status: 401 });
+      return corsResponse(NextResponse.json({ error: 'Missing or invalid Authorization header' }, { status: 401 }));
     }
 
     const token = authHeader.split(' ')[1];
@@ -104,13 +116,13 @@ export async function POST(
       .single();
 
     if (authError || !apiKey || !(apiKey as any).is_active) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return corsResponse(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }));
     }
 
     // 2. Resolve Metadata
     const obj = await getObjectByApiName(resource);
     if (!obj) {
-      return NextResponse.json({ error: `Resource '${resource}' not found` }, { status: 404 });
+      return corsResponse(NextResponse.json({ error: `Resource '${resource}' not found` }, { status: 404 }));
     }
 
     const payload = await request.json();
@@ -123,22 +135,16 @@ export async function POST(
       .single();
 
     if (!userProfile) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 500 });
+      return corsResponse(NextResponse.json({ error: 'User profile not found' }, { status: 500 }));
     }
 
     const perms = await getFLSPermissions((userProfile as any).profile_id, obj.id);
     const guard = validateFLSEditGuard(payload, perms);
     if (!guard.valid) {
-      return NextResponse.json({ error: `Unauthorized to edit field: ${guard.field}` }, { status: 403 });
+      return corsResponse(NextResponse.json({ error: `Unauthorized to edit field: ${guard.field}` }, { status: 403 }));
     }
 
     // 4. Save Record (Injecting API User as owner)
-    // Note: saveRecord already assigns owner_id from auth.getUser() in Server Actions,
-    // but here in a Route Handler, we pass the context manually.
-    // However, saveRecord is implemented to use createSSRClient().auth.getUser().
-    // We should probably implement a specific save function or modify it.
-    // For now, let's use supabaseAdmin directly to ensure the API owner_id is pinned.
-    
     const { data: saveResult, error: saveError } = await (supabaseAdmin.from('sf_records') as any).insert({
       object_id: obj.id,
       record_data: payload,
@@ -146,14 +152,15 @@ export async function POST(
     }).select('id').single();
 
     if (saveError) {
-      return NextResponse.json({ error: saveError.message }, { status: 500 });
+      return corsResponse(NextResponse.json({ error: saveError.message }, { status: 500 }));
     }
 
     // 5. Trigger Flows
     executeFlows(obj.id, (saveResult as any).id, payload, 'onCreate', resource).catch(e => console.error('API Flow trigger failed:', e));
     
-    return NextResponse.json({ success: true, id: (saveResult as any).id });
+    return corsResponse(NextResponse.json({ success: true, id: (saveResult as any).id }));
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return corsResponse(NextResponse.json({ error: error.message }, { status: 500 }));
   }
 }
+
