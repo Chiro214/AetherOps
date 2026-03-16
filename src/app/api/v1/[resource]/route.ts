@@ -34,7 +34,7 @@ export async function GET(
       .eq('key_hash', token) // Note: In production we should use cryptographic hashing
       .single();
 
-    if (authError || !apiKey || !apiKey.is_active) {
+    if (authError || !apiKey || !(apiKey as any).is_active) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -50,7 +50,7 @@ export async function GET(
       .from('sf_records')
       .select('*')
       .eq('object_id', obj.id)
-      .eq('owner_id', apiKey.owner_id); // Manual RLS enforcement for API user
+      .eq('owner_id', (apiKey as any).owner_id); // Manual RLS enforcement for API user
 
     if (fetchError) {
       return NextResponse.json({ error: fetchError.message }, { status: 500 });
@@ -60,17 +60,17 @@ export async function GET(
     const { data: userProfile } = await supabaseAdmin
       .from('sf_users')
       .select('profile_id')
-      .eq('id', apiKey.owner_id)
+      .eq('id', (apiKey as any).owner_id)
       .single();
 
     if (!userProfile) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 500 });
     }
 
-    const perms = await getFLSPermissions(userProfile.profile_id, obj.id);
+    const perms = await getFLSPermissions((userProfile as any).profile_id, obj.id);
 
     // 5. Apply FLS Filter before returning response
-    const filteredRecords = (records || []).map(rec => ({
+    const filteredRecords = (records as any[] || []).map(rec => ({
       id: rec.id,
       record_data: applyFLSReadFilter(rec.record_data, perms),
       created_at: rec.created_at,
@@ -103,7 +103,7 @@ export async function POST(
       .eq('key_hash', token)
       .single();
 
-    if (authError || !apiKey || !apiKey.is_active) {
+    if (authError || !apiKey || !(apiKey as any).is_active) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -119,14 +119,14 @@ export async function POST(
     const { data: userProfile } = await supabaseAdmin
       .from('sf_users')
       .select('profile_id')
-      .eq('id', apiKey.owner_id)
+      .eq('id', (apiKey as any).owner_id)
       .single();
 
     if (!userProfile) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 500 });
     }
 
-    const perms = await getFLSPermissions(userProfile.profile_id, obj.id);
+    const perms = await getFLSPermissions((userProfile as any).profile_id, obj.id);
     const guard = validateFLSEditGuard(payload, perms);
     if (!guard.valid) {
       return NextResponse.json({ error: `Unauthorized to edit field: ${guard.field}` }, { status: 403 });
@@ -139,10 +139,10 @@ export async function POST(
     // We should probably implement a specific save function or modify it.
     // For now, let's use supabaseAdmin directly to ensure the API owner_id is pinned.
     
-    const { data, error: saveError } = await (supabaseAdmin.from('sf_records') as any).insert({
+    const { data: saveResult, error: saveError } = await (supabaseAdmin.from('sf_records') as any).insert({
       object_id: obj.id,
       record_data: payload,
-      owner_id: apiKey.owner_id // Crucial: Pin to API key owner
+      owner_id: (apiKey as any).owner_id // Crucial: Pin to API key owner
     }).select('id').single();
 
     if (saveError) {
@@ -150,9 +150,9 @@ export async function POST(
     }
 
     // 5. Trigger Flows
-    executeFlows(obj.id, data.id, payload, 'onCreate', resource).catch(e => console.error('API Flow trigger failed:', e));
+    executeFlows(obj.id, (saveResult as any).id, payload, 'onCreate', resource).catch(e => console.error('API Flow trigger failed:', e));
     
-    return NextResponse.json({ success: true, id: data.id });
+    return NextResponse.json({ success: true, id: (saveResult as any).id });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

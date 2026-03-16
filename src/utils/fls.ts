@@ -21,7 +21,7 @@ export async function getCurrentUserProfileId() {
     .eq('id', user.id)
     .single();
 
-  return profile?.profile_id || null;
+  return (profile as any)?.profile_id || null;
 }
 
 /**

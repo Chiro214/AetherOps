@@ -11,9 +11,9 @@ import { v4 as uuidv4 } from 'uuid'; // Standard node uuid generation
 // HTML5 Drag and Drop Types
 const DRAG_TYPE_FIELD = 'application/x-sf-field';
 
-export default function LayoutBuilder({ params }: { params: { api_name: string } }) {
+export default function LayoutBuilder({ params }: { params: Promise<{ api_name: string }> }) {
   const router = useRouter();
-  const [apiName, setApiName] = useState('');
+  const { api_name } = React.use(params);
   
   const [objectData, setObjectData] = useState<any>(null);
   const [allFields, setAllFields] = useState<any[]>([]);
@@ -23,25 +23,18 @@ export default function LayoutBuilder({ params }: { params: { api_name: string }
   ]);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Unwrap params
   useEffect(() => {
-    params.then(p => setApiName(p.api_name));
-  }, [params]);
-
-  useEffect(() => {
-    if (!apiName) return;
+    if (!api_name) return;
     async function init() {
-      const obj = await getObjectByApiName(apiName);
+      const obj = await getObjectByApiName(api_name);
       if (!obj) return router.push('/setup/object-manager');
       setObjectData(obj);
       
       const fields = await getFieldsForObject(obj.id);
       setAllFields(fields);
-      
-      // Auto-populate default section if empty? No, let the user map it
     }
     init();
-  }, [apiName, router]);
+  }, [api_name, router]);
 
   // Derived state: Available fields are those NOT currently mapped in any section
   const mappedFieldApiNames = new Set(sections.flatMap(s => s.fields));
@@ -132,7 +125,7 @@ export default function LayoutBuilder({ params }: { params: { api_name: string }
     // Sanitize Payload (strip UI `id` local tracking if we wanted, but it's safe to push JSON)
     const res = await saveLayout(objectData.id, layoutName, sections);
     if (res.success) {
-      router.push(`/setup/object-manager/${apiName}`);
+      router.push(`/setup/object-manager/${api_name}`);
     } else {
       alert('Failed to save layout: ' + res.error);
     }
@@ -147,7 +140,7 @@ export default function LayoutBuilder({ params }: { params: { api_name: string }
       {/* Header Bar */}
       <div className="absolute top-0 left-0 right-0 h-14 bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-6 z-20">
         <div className="flex items-center gap-4">
-          <Link href={`/setup/object-manager/${apiName}`} className="text-slate-500 hover:text-slate-800 transition-colors">
+          <Link href={`/setup/object-manager/${api_name}`} className="text-slate-500 hover:text-slate-800 transition-colors">
             <ArrowLeft size={20} />
           </Link>
           <div className="w-8 h-8 bg-indigo-600 rounded flex items-center justify-center text-white shadow-sm">

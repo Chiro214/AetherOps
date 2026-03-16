@@ -86,7 +86,7 @@ export async function updateRecordField(recordId: string, apiName: string, field
     if (recInfo) {
       const profileId = await getCurrentUserProfileId();
       if (profileId) {
-        const perms = await getFLSPermissions(profileId, recInfo.object_id);
+        const perms = await getFLSPermissions(profileId, (recInfo as any).object_id);
         const guard = validateFLSEditGuard({ [fieldApiName]: newValue }, perms);
         if (!guard.valid) {
           return { success: false, error: `Unauthorized to edit field: ${fieldApiName}` };

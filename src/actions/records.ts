@@ -81,9 +81,9 @@ export async function getRecordsForObject(apiName: string): Promise<any[]> {
     const profileId = await getCurrentUserProfileId();
     if (profileId && data) {
       const perms = await getFLSPermissions(profileId, obj.id);
-      return data.map(record => ({
+      return (data as any[]).map(record => ({
         ...record,
-        record_data: applyFLSReadFilter(record.record_data, perms)
+        record_data: applyFLSReadFilter((record as any).record_data, perms)
       }));
     }
     
@@ -110,10 +110,10 @@ export async function getRecordById(recordId: string): Promise<any> {
     // Apply FLS Read Filter
     const profileId = await getCurrentUserProfileId();
     if (profileId && data) {
-       const perms = await getFLSPermissions(profileId, data.object_id);
+       const perms = await getFLSPermissions(profileId, (data as any).object_id);
        return {
-          ...data,
-          record_data: applyFLSReadFilter(data.record_data, perms)
+          ...(data as any),
+          record_data: applyFLSReadFilter((data as any).record_data, perms)
        };
     }
 

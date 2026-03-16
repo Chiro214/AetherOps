@@ -66,8 +66,8 @@ Return ONLY valid JSON.`,
     // Insert the interaction log
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore: Supabase client fails to infer generic tables without CLI regenerator
-    const { error: intError } = await supabaseAdmin
-      .from('interactions')
+    const { error: intError } = await (supabaseAdmin
+      .from('interactions') as any)
       .insert({
         customer_id,
         direction,
