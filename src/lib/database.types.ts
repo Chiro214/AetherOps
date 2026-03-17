@@ -457,110 +457,29 @@ export interface Database {
           updated_at?: string
         }
       }
-      sf_reports: {
+      user_preferences: {
         Row: {
           id: string
-          name: string
-          object_id: string
-          selected_columns: Json
-          filters: Json
-          owner_id: string | null
-          created_at: string
+          user_id: string
+          theme: 'light' | 'dark' | 'system'
+          dashboard_config: Json
+          locale: string
           updated_at: string
         }
         Insert: {
           id?: string
-          name: string
-          object_id: string
-          selected_columns?: Json
-          filters?: Json
-          owner_id?: string | null
-          created_at?: string
+          user_id: string
+          theme?: 'light' | 'dark' | 'system'
+          dashboard_config?: Json
+          locale?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          name?: string
-          object_id?: string
-          selected_columns?: Json
-          filters?: Json
-          owner_id?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      sf_apps: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      sf_app_tabs: {
-        Row: {
-          id: string
-          app_id: string
-          object_id: string
-          display_order: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          app_id: string
-          object_id: string
-          display_order?: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          app_id?: string
-          object_id?: string
-          display_order?: number
-          created_at?: string
-        }
-      }
-      sf_field_permissions: {
-        Row: {
-          id: string
-          profile_id: string
-          field_id: string
-          is_readable: boolean
-          is_editable: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          profile_id: string
-          field_id: string
-          is_readable?: boolean
-          is_editable?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          profile_id?: string
-          field_id?: string
-          is_readable?: boolean
-          is_editable?: boolean
-          created_at?: string
+          user_id?: string
+          theme?: 'light' | 'dark' | 'system'
+          dashboard_config?: Json
+          locale?: string
           updated_at?: string
         }
       }

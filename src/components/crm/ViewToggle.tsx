@@ -11,21 +11,21 @@ export default function ViewToggle() {
    const currentView = searchParams.get('view') === 'kanban' ? 'kanban' : 'table';
 
    return (
-     <div className="flex border border-gray-300 rounded bg-white overflow-hidden shadow-sm">
+     <div className="flex border border-gray-300 dark:border-void-lighter rounded-lg bg-white dark:bg-void overflow-hidden shadow-sm transition-all">
         <Link 
           href={pathname + '?view=table'}
-          className={`px-3 py-1 flex items-center justify-center transition-colors ${currentView === 'table' ? 'bg-[#0176D3] text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+          className={`px-4 py-2 flex items-center justify-center transition-all ${currentView === 'table' ? 'bg-aether-blue text-white shadow-inner' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-void-lighter'}`}
           title="Display as Table"
         >
-          <LayoutList size={16} />
+          <LayoutList size={18} />
         </Link>
-        <div className="w-px bg-gray-300"></div>
+        <div className="w-px bg-gray-300 dark:bg-void-lighter"></div>
         <Link 
           href={pathname + '?view=kanban'}
-          className={`px-3 py-1 flex items-center justify-center transition-colors ${currentView === 'kanban' ? 'bg-[#0176D3] text-white' : 'text-gray-500 hover:bg-gray-50'}`}
+          className={`px-4 py-2 flex items-center justify-center transition-all ${currentView === 'kanban' ? 'bg-aether-blue text-white shadow-inner' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-void-lighter'}`}
           title="Display as Kanban Board"
         >
-          <KanbanSquare size={16} />
+          <KanbanSquare size={18} />
         </Link>
      </div>
    );

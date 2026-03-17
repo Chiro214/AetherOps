@@ -21,20 +21,23 @@ export default async function NewRecordPage({ params }: { params: Promise<{ reso
   const layoutConfig = await getLayoutForObject(obj.id);
 
   return (
-    <div className="p-8 h-full bg-[#f3f3f3] flex items-center justify-center overflow-auto">
+    <div className="p-8 h-full bg-gray-50 dark:bg-void flex items-start justify-center overflow-auto scrollbar-thin transition-colors duration-300">
       {/* SLDS Modal-style wrapper */}
-      <div className="bg-white rounded shadow-lg max-w-4xl w-full flex flex-col border border-gray-200 min-h-[50vh]">
+      <div className="bg-white dark:bg-void-light rounded-xl shadow-2xl max-w-4xl w-full flex flex-col border border-gray-200 dark:border-void-lighter min-h-[50vh] transition-all transform animate-in fade-in zoom-in duration-300">
         
         {/* Modal Header */}
-        <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center gap-3 rounded-t">
-            <div className="w-8 h-8 bg-[#7F8DE1] rounded flex items-center justify-center text-white shrink-0">
-               <span className="text-lg font-bold">{obj.label.charAt(0)}</span>
+        <div className="p-5 border-b border-gray-100 dark:border-void-lighter bg-white dark:bg-void-light/50 flex items-center gap-4 rounded-t-xl transition-colors">
+            <div className="w-10 h-10 bg-[#7F8DE1] rounded-lg shadow-md flex items-center justify-center text-white shrink-0 transform hover:rotate-6 transition-transform">
+               <span className="text-xl font-black">{obj.label.charAt(0)}</span>
             </div>
-            <h2 className="text-xl font-bold text-gray-900">New {obj.label}</h2>
+            <div>
+              <div className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-0.5">RESOURCE CREATION</div>
+              <h2 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight">New {obj.label}</h2>
+            </div>
         </div>
 
         {/* Modal Body / Client component injected here */}
-        <div className="p-6 flex-1 overflow-y-auto bg-white">
+        <div className="p-8 flex-1 overflow-y-auto bg-white dark:bg-void-light/30 transition-colors">
           <DynamicFormClient 
             objectId={obj.id} 
             objectLabel={obj.label} 

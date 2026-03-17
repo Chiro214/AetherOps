@@ -1,26 +1,36 @@
 @import "tailwindcss";
-/* tailwind ignore */
 
-@theme inline {
+@theme {
   --color-void: #0B0C10;
   --color-void-light: #13141A;
   --color-void-lighter: #1A1B23;
-  --color-glass-border: rgba(255, 255, 255, 0.05);
-  --color-glass-bg: rgba(255, 255, 255, 0.02);
-  --color-glass-bg-hover: rgba(255, 255, 255, 0.04);
   --color-crimson: #991B1B;
   --color-crimson-light: #DC2626;
-  --color-crimson-dark: #7F1D1D;
   --color-accent: #22D3EE;
-  --color-accent-dim: rgba(34, 211, 238, 0.15);
-  --color-success: #34D399;
-  --color-warning: #FBBF24;
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #94A3B8;
-  --color-text-muted: #475569;
+  --color-aether-blue: #0176D3;
+}
 
-  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, monospace;
-  --font-sans: "Inter", "Geist", ui-sans-serif, sans-serif;
+/* Explicitly tell Tailwind 4 to use the .dark class for the dark: variant */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom Variables for Theme Switching */
+:root {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+  --line-color: #E2E8F0;
+  --text-main: #1E293B;
+  --text-muted: #64748B;
+  --font-sans: "Inter", ui-sans-serif, sans-serif;
+  color-scheme: light;
+}
+
+.dark {
+  --bg-primary: #0B0C10; /* --color-void */
+  --bg-secondary: #13141A; /* --color-void-light */
+  --line-color: #1A1B23; /* --color-void-lighter */
+  --text-main: #F1F5F9;
+  --text-muted: #94A3B8;
+  color-scheme: dark;
 }
 
 * {
@@ -48,11 +58,12 @@
 html, body {
   height: 100%;
   overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body {
-  background: var(--color-void);
-  color: var(--color-text-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-main);
   font-family: var(--font-sans);
 }
 

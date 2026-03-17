@@ -39,7 +39,7 @@ export async function bulkImportRecords(objectId: string, mappedRecords: any[], 
 
     return { success: true, count: recordsToInsert.length };
   } catch (error: any) {
-    console.warn('AO_DIAGNOSTIC (bulkImportRecords Exception):', error.message || error);
+    console.error('Bulk Import Error:', error);
     return { success: false, error: error.message };
   }
 }

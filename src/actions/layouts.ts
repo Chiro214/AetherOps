@@ -58,21 +58,14 @@ export async function getLayoutForObject(objectId: string): Promise<ObjectLayout
       .eq('object_id', objectId)
       .single();
 
-    if (error) {
-      if (error.code !== 'PGRST116') { // PGRST116 is "No rows found" which is normal
-        console.warn('AO_DIAGNOSTIC (getLayoutForObject):', {
-          code: error.code,
-          message: error.message,
-          hint: error.hint,
-          objectId
-        });
-      }
+    // Not finding a layout isn't an error, it just means we render standard generic mode
+    if (error || !data) {
       return null;
     }
 
-    return data?.layout_config as ObjectLayoutConfig;
-  } catch (error: any) {
-    console.warn('Error fetching layout:', error.message || error);
+    return data.layout_config as ObjectLayoutConfig;
+  } catch (error) {
+    console.error('Error fetching layout:', error);
     return null;
   }
 }

@@ -73,21 +73,21 @@ export default function LookupSearch({
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-       {selectedRecordLabel && value ? (
-          <div className="flex items-center justify-between border border-gray-300 rounded p-1.5 focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] bg-blue-50">
+        {selectedRecordLabel && value ? (
+          <div className="flex items-center justify-between border border-blue-200 dark:border-blue-900/50 rounded-lg p-2 bg-blue-50 dark:bg-blue-900/20 transition-all shadow-sm">
              <div className="flex items-center gap-2">
-                <span className="text-sm text-[#0176D3] font-medium ml-1">{selectedRecordLabel}</span>
+                <span className="text-sm text-aether-blue dark:text-blue-400 font-bold ml-1">{selectedRecordLabel}</span>
              </div>
-             <button onClick={handleClear} className="text-gray-500 hover:text-gray-800 pr-1">
+             <button onClick={handleClear} className="text-gray-400 dark:text-gray-500 hover:text-crimson transition-colors pr-1">
                 <X size={14} />
              </button>
           </div>
        ) : (
-          <div className="relative">
-             <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative group">
+             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-aether-blue transition-colors" />
              <input 
                type="text" 
-               className="w-full text-sm border border-gray-300 rounded py-1.5 pl-7 pr-3 focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] focus:outline-none placeholder-gray-400"
+               className="w-full text-sm bg-white dark:bg-void-light border border-gray-200 dark:border-void-lighter rounded-lg py-2 pl-9 pr-3 focus:bg-white dark:focus:bg-void focus:border-aether-blue focus:ring-1 focus:ring-aether-blue focus:outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600 text-gray-900 dark:text-gray-100 shadow-sm"
                placeholder="Search related object..."
                value={searchTerm}
                onChange={(e) => setSearchTerm(e.target.value)}
@@ -97,21 +97,20 @@ export default function LookupSearch({
        )}
 
        {showDropdown && results.length > 0 && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-60 overflow-y-auto z-50">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-void-light border border-gray-200 dark:border-void-lighter rounded-xl shadow-2xl max-h-60 overflow-y-auto z-50 backdrop-blur-xl transition-all animate-in slide-in-from-top-2 duration-200">
              {isSearching ? (
-                <div className="p-3 text-sm text-gray-500 text-center">Searching...</div>
+                <div className="p-4 text-xs font-black text-gray-400 dark:text-gray-500 text-center uppercase tracking-widest">Searching...</div>
              ) : (
-                <ul className="py-1">
+                <ul className="py-2">
                    {results.map((rec) => {
                       const label = rec.record_data?.Name || rec.record_data?.Title || 'Unknown';
                       return (
                          <li 
                             key={rec.id} 
-                            className="px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 cursor-pointer border-b border-gray-50 last:border-none"
+                            className="px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-void-lighter cursor-pointer border-b border-gray-50 dark:border-void-lighter/50 last:border-none transition-colors"
                             onClick={() => handleSelect(rec)}
                          >
-                            <div className="font-semibold text-[#0176D3]">{label}</div>
-                            {/* Option to show secondary snippet */}
+                            <div className="font-bold text-aether-blue dark:text-blue-400 group-hover:underline">{label}</div>
                          </li>
                       );
                    })}
@@ -121,7 +120,7 @@ export default function LookupSearch({
        )}
 
        {showDropdown && searchTerm.length >= 2 && results.length === 0 && !isSearching && (
-          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded shadow-lg z-50 p-3 text-sm text-center text-gray-500">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-void-light border border-gray-200 dark:border-void-lighter rounded-xl shadow-2xl z-50 p-4 text-xs font-black text-center text-gray-400 dark:text-gray-500 uppercase tracking-widest animate-in slide-in-from-top-2">
              No matching records found.
           </div>
        )}

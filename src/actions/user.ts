@@ -45,15 +45,78 @@ export async function createUser(formData: FormData) {
   });
 
   if (error) {
-    console.warn('AO_DIAGNOSTIC (createUser):', {
-      code: error.code,
-      message: error.message,
-      hint: error.hint
-    });
+    console.error('Error creating user:', error);
     return { error: error.message };
   }
 
   // Revalidate the users list so the new user appears immediately
   revalidatePath('/setup/users');
   return { success: true };
+}
+
+export async function getUserPreferences(userId?: string) {
+  try {
+    let targetUserId = userId;
+
+    if (!targetUserId) {
+      // Logic for trial/mock mode: get the first user
+      const { data: users } = await (supabaseAdmin.from('sf_users') as any).select('id').limit(1);
+      if (users && users.length > 0) {
+        targetUserId = users[0].id;
+      }
+    }
+
+    if (!targetUserId) return null;
+
+    const { data, error } = await supabaseAdmin
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', targetUserId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows found"
+      console.error('Error fetching preferences:', error);
+      return null;
+    }
+
+    return data || null;
+  } catch (err) {
+    console.error('Exception fetching preferences:', err);
+    return null;
+  }
+}
+
+export async function updateUserPreferences(payload: any, userId?: string) {
+  try {
+    let targetUserId = userId;
+
+    if (!targetUserId) {
+      const { data: users } = await (supabaseAdmin.from('sf_users') as any).select('id').limit(1);
+      if (users && users.length > 0) {
+        targetUserId = users[0].id;
+      }
+    }
+
+    if (!targetUserId) return { success: false, error: 'No user identified' };
+
+    const { error } = await supabaseAdmin
+      .from('user_preferences')
+      .upsert({
+        user_id: targetUserId,
+        ...payload,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+
+    if (error) {
+      console.error('Error updating preferences:', error);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/');
+    revalidatePath('/home');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Exception updating preferences:', err);
+    return { success: false, error: err.message };
+  }
 }

@@ -13,30 +13,14 @@ const APP_COOKIE_NAME = 'aetherops_active_app';
 
 export async function getApps() {
   try {
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
-      console.error('AO_DIAGNOSTIC: NEXT_PUBLIC_SUPABASE_URL is missing');
-    }
-    
     const { data: apps, error } = await supabaseAdmin.from('sf_apps').select('*').order('name');
-    
     if (error) {
-      console.warn('AO_DIAGNOSTIC (getApps):', {
-        code: error.code,
-        message: error.message,
-        hint: error.hint
-      });
-      // Fallback for dev/initial setup
-      return [
-        { id: '1', name: 'Sales Console', description: 'Primary workspace' },
-        { id: '2', name: 'Service Console', description: 'Support workspace' }
-      ];
+      console.error('Error fetching apps:', error);
+      return [];
     }
-    return apps && apps.length > 0 ? apps : [
-      { id: '1', name: 'Sales Console', description: 'Primary workspace' },
-      { id: '2', name: 'Service Console', description: 'Support workspace' }
-    ];
-  } catch (err: any) {
-    console.warn('Exception fetching apps:', err.message || err);
+    return apps || [];
+  } catch (err) {
+    console.error('Exception fetching apps:', err);
     return [];
   }
 }
@@ -79,42 +63,23 @@ export async function getTabsForApp(appId: string | null) {
       .order('display_order');
 
     if (error) {
-      console.warn('AO_DIAGNOSTIC (getTabsForApp):', {
-        code: error.code,
-        message: error.message,
-        hint: error.hint
-      });
-      // Fallback: Return standard CRM objects if app-specific tabs fail
-      return [
-        { label: 'Accounts', api_name: 'Account' },
-        { label: 'Contacts', api_name: 'Contact' },
-        { label: 'Opportunities', api_name: 'Opportunity' },
-        { label: 'Leads', api_name: 'Lead' }
-      ];
+      console.error('Error fetching tabs for app:', error);
+      return [];
     }
 
     // Standardize return shape to match fallback query
     if (tabs && tabs.length > 0) {
        return tabs.map((t: any) => ({
-         label: t.sf_objects?.label || 'Unknown',
-         api_name: t.sf_objects?.api_name || 'unknown'
+         label: t.sf_objects.label,
+         api_name: t.sf_objects.api_name
        }));
     } else {
-       // If an app has no tabs defined yet, return standard CRM objects
-       return [
-         { label: 'Accounts', api_name: 'Account' },
-         { label: 'Contacts', api_name: 'Contact' },
-         { label: 'Opportunities', api_name: 'Opportunity' },
-         { label: 'Leads', api_name: 'Lead' }
-       ];
+       // If an app has no tabs defined yet, return an empty array (or fallback objects if preferred).
+       // By standard CRM behavior, an empty app just has Home/Dashboards.
+       return [];
     }
-  } catch (err: any) {
-    console.warn('Exception fetching tabs:', err.message || err);
-    return [
-      { label: 'Accounts', api_name: 'Account' },
-      { label: 'Contacts', api_name: 'Contact' },
-      { label: 'Opportunities', api_name: 'Opportunity' },
-      { label: 'Leads', api_name: 'Lead' }
-    ];
+  } catch (err) {
+    console.error('Exception fetching tabs:', err);
+    return [];
   }
 }

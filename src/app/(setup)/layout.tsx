@@ -7,7 +7,7 @@ export default function SetupLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col h-screen w-full bg-[#f3f3f3] text-gray-900 font-sans overflow-hidden antialiased">
+    <div className="flex flex-col h-screen w-full bg-[#f3f3f3] dark:bg-void text-gray-900 dark:text-gray-100 font-sans overflow-hidden antialiased transition-colors duration-300">
       <SetupHeader />
       
       <div className="flex flex-1 overflow-hidden">

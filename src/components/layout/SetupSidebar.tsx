@@ -35,21 +35,21 @@ export default function SetupSidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white border-r border-gray-200 h-full flex flex-col overflow-y-auto">
-       <div className="p-4 border-b border-gray-100">
-          <Link href="/setup/home" className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-[#0176D3] transition-colors">
-             <Home size={16} /> Setup Home
+    <aside className="w-64 bg-white dark:bg-void border-r border-gray-200 dark:border-void-lighter h-full flex flex-col overflow-y-auto transition-colors duration-300">
+       <div className="p-4 border-b border-gray-100 dark:border-void-lighter">
+          <Link href="/setup/home" className="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:text-aether-blue dark:hover:text-blue-400 transition-all group">
+             <Home size={16} className="group-hover:scale-110 transition-transform" /> Setup Home
           </Link>
        </div>
 
-       <div className="flex-1 py-2">
+       <div className="flex-1 py-4">
          {MENU.map((section) => (
-            <div key={section.category} className="mb-2">
+            <div key={section.category} className="mb-4">
                <button 
                  onClick={() => toggleCategory(section.category)}
-                 className="w-full flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide hover:bg-gray-50 transition-colors"
+                 className="w-full flex items-center gap-1 px-4 py-1.5 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest hover:bg-gray-50 dark:hover:bg-void-lighter/50 transition-colors"
                >
-                 {expandedCategories[section.category] ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                 {expandedCategories[section.category] ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                  {section.category}
                </button>
                
@@ -61,13 +61,13 @@ export default function SetupSidebar() {
                        <li key={item.href}>
                          <Link 
                            href={item.href}
-                           className={`flex items-center gap-2 px-6 py-1.5 text-sm transition-colors border-l-2 ${
+                           className={`flex items-center gap-3 px-6 py-2 text-sm transition-all border-l-4 ${
                              isActive 
-                               ? 'border-[#0176D3] text-[#0176D3] font-medium bg-[#0176D3]/5' 
-                               : 'border-transparent text-gray-700 hover:bg-gray-50'
+                               ? 'border-aether-blue text-aether-blue font-bold bg-blue-50/50 dark:bg-void-lighter' 
+                               : 'border-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-void-lighter hover:text-gray-900 dark:hover:text-gray-200'
                            }`}
                          >
-                           <item.icon size={16} className={isActive ? 'text-[#0176D3]' : 'text-gray-400'} />
+                           <item.icon size={16} className={isActive ? 'text-aether-blue' : 'text-gray-400 group-hover:text-gray-600'} />
                            {item.label}
                          </Link>
                        </li>

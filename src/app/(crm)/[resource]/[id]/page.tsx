@@ -69,64 +69,64 @@ export default async function RecordDetailView({ params }: { params: Promise<{ r
   const relatedGroups = await getRelatedRecords(obj.id, recordId);
 
   return (
-    <div className="flex flex-col h-full bg-[#f3f3f3] p-4 overflow-y-auto space-y-4">
+    <div className="flex flex-col h-full bg-[#f3f3f3] dark:bg-void p-6 overflow-y-auto space-y-6 transition-colors duration-300 scrollbar-thin">
       {/* Highlights Panel */}
-      <div className="bg-white rounded shadow-sm border border-gray-200 p-4 flex items-center justify-between">
-         <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#7F8DE1] rounded flex items-center justify-center text-white shrink-0">
-               <span className="text-xl font-bold">{obj.label.charAt(0)}</span>
+      <div className="bg-white dark:bg-void-light rounded-xl shadow-sm border border-gray-200 dark:border-void-lighter p-6 flex items-center justify-between transition-all">
+         <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center text-white shrink-0 shadow-lg transform active:scale-95 transition-transform">
+               <span className="text-2xl font-black">{obj.label.charAt(0)}</span>
             </div>
             <div>
-               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{obj.label}</div>
-               <h1 className="text-xl font-bold text-gray-900">{recordName || 'Untitled'}</h1>
+               <div className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">{obj.label}</div>
+               <h1 className="text-2xl font-black text-gray-900 dark:text-gray-100 tracking-tight">{recordName || 'Untitled'}</h1>
             </div>
          </div>
-         <div className="flex gap-2">
+         <div className="flex gap-3">
             <Link 
                href={`/${resourceName}/${recordId}/edit`}
-               className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition-colors pointer-cursor"
+               className="px-4 py-2 bg-white dark:bg-void border border-gray-200 dark:border-void-lighter text-gray-700 dark:text-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 dark:hover:bg-void-lighter shadow-sm transition-all transform active:scale-95"
             >
                Edit
             </Link>
-            <button className="px-3 py-1.5 bg-white border border-gray-300 text-red-600 text-sm font-medium rounded hover:bg-gray-50 transition-colors">
+            <button className="px-4 py-2 bg-white dark:bg-void border border-gray-200 dark:border-void-lighter text-red-600 dark:text-red-400 text-sm font-bold rounded-lg hover:bg-gray-50 dark:hover:bg-void-lighter shadow-sm transition-all transform active:scale-95">
                Delete
             </button>
          </div>
       </div>
 
       {/* Main Canvas Grid */}
-      <div className="flex flex-col md:flex-row gap-4 items-start">
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
          
          {/* Left Column: Details Tab (70%) */}
          <RecordTabs 
             detailsContent={
-               <div className="flex flex-col gap-6">
+               <div className="flex flex-col gap-8">
                   {layoutConfig && layoutConfig.length > 0 ? (
                      layoutConfig.map((section: LayoutSection) => (
-                        <div key={section.id} className="flex flex-col">
-                           <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide border-b border-gray-200 pb-2 mb-4">
+                        <div key={section.id} className="flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-500">
+                           <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-void-lighter pb-3 mb-6">
                               {section.sectionName}
                            </h3>
-                           <div className={`grid gap-x-12 gap-y-4 ${section.columns === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                           <div className={`grid gap-x-12 gap-y-6 ${section.columns === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1'}`}>
                               {section.fields.map((apiName: string) => {
                                  const field = fields.find((f: any) => f.field_api_name === apiName);
-                                 if (!field) return null; // Fault-tolerant rendering
+                                 if (!field) return null;
 
                                  const value = record.record_data?.[field.field_api_name];
                                  const isLookup = field.data_type === 'Lookup' && !!value;
                                  const lookupInfo = isLookup ? lookupMap[field.field_api_name] : null;
 
                                  return (
-                                    <div key={field.id} className="flex flex-col border-b border-gray-100 pb-2">
-                                       <span className="text-xs text-gray-500 font-medium mb-1">{field.field_label}</span>
-                                       <span className="text-sm text-gray-900">
+                                    <div key={field.id} className="flex flex-col group border-b border-transparent hover:border-gray-100 dark:hover:border-void-lighter pb-2 transition-all">
+                                       <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-aether-blue transition-colors">{field.field_label}</span>
+                                       <span className="text-sm text-gray-900 dark:text-gray-100 font-semibold">
                                           {isLookup && lookupInfo ? (
-                                             <Link href={`/${lookupInfo.resourceName}/${value}`} className="text-[#0176D3] hover:underline">
+                                             <Link href={`/${lookupInfo.resourceName}/${value}`} className="text-aether-blue dark:text-blue-400 hover:underline underline-offset-4">
                                                 {lookupInfo.label}
                                              </Link>
                                           ) : value !== undefined && value !== null && value !== '' 
                                              ? (typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value))
-                                             : '—'}
+                                             : <span className="text-gray-300 dark:text-gray-700 font-normal italic">—</span>}
                                        </span>
                                     </div>
                                  );
@@ -135,25 +135,25 @@ export default async function RecordDetailView({ params }: { params: Promise<{ r
                         </div>
                      ))
                   ) : (
-                     <div>
-                        <h2 className="text-base font-bold text-gray-800 mb-6">Information</h2>
-                        <div className="grid grid-cols-2 gap-x-12 gap-y-6">
+                     <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <h3 className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gray-100 dark:border-void-lighter pb-3 mb-6">Information</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                            {fields.map((field: any) => {
                               const value = record.record_data?.[field.field_api_name];
                               const isLookup = field.data_type === 'Lookup' && !!value;
                               const lookupInfo = isLookup ? lookupMap[field.field_api_name] : null;
 
                               return (
-                                 <div key={field.id} className="flex flex-col border-b border-gray-100 pb-2">
-                                    <span className="text-xs text-gray-500 font-medium mb-1">{field.field_label}</span>
-                                    <span className="text-sm text-gray-900">
+                                 <div key={field.id} className="flex flex-col group border-b border-transparent hover:border-gray-100 dark:hover:border-void-lighter pb-2 transition-all">
+                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-wider mb-1 group-hover:text-aether-blue transition-colors">{field.field_label}</span>
+                                    <span className="text-sm text-gray-900 dark:text-gray-100 font-semibold">
                                        {isLookup && lookupInfo ? (
-                                          <Link href={`/${lookupInfo.resourceName}/${value}`} className="text-[#0176D3] hover:underline">
+                                          <Link href={`/${lookupInfo.resourceName}/${value}`} className="text-aether-blue dark:text-blue-400 hover:underline underline-offset-4">
                                              {lookupInfo.label}
                                           </Link>
                                        ) : value !== undefined && value !== null && value !== '' 
                                           ? (typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value))
-                                          : '—'}
+                                          : <span className="text-gray-300 dark:text-gray-700 font-normal italic">—</span>}
                                     </span>
                                  </div>
                               );
@@ -169,7 +169,7 @@ export default async function RecordDetailView({ params }: { params: Promise<{ r
          />
 
          {/* Right Column: Activity / Related Sidebar (30%) */}
-         <div className="w-full md:w-[30%] flex flex-col gap-4 min-h-[400px]">
+         <div className="w-full lg:w-[30%] flex flex-col gap-6 min-h-[400px]">
             <ActivityPublisher recordId={recordId} resourceName={resourceName} />
             <ActivityTimeline recordId={recordId} />
          </div>

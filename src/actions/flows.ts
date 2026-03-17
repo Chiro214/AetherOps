@@ -28,18 +28,14 @@ export async function createFlow(payload: {
       });
 
     if (error) {
-       console.warn('AO_DIAGNOSTIC (createFlow):', {
-         code: error.code,
-         message: error.message,
-         hint: error.hint
-       });
+       console.error('Error creating flow:', error);
        return { success: false, error: error.message };
     }
 
     revalidatePath('/setup/flows');
     return { success: true };
   } catch (err: any) {
-    console.warn('AO_DIAGNOSTIC (createFlow Exception):', err.message || err);
+    console.error('Exception creating flow:', err);
     return { success: false, error: err.message };
   }
 }

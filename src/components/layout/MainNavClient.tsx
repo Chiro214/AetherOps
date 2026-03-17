@@ -15,10 +15,10 @@ export default function MainNavClient({ navItems }: { navItems: { label: string,
            <li key={item.href} className="h-full">
              <Link 
                href={item.href}
-               className={`h-full flex items-center px-4 text-sm font-medium transition-colors border-b-2 ${
+               className={`h-full flex items-center px-4 text-sm font-medium transition-all border-b-2 ${
                  isActive 
-                   ? 'text-[#0176D3] border-[#0176D3]' 
-                   : 'text-gray-700 border-transparent hover:text-[#0176D3] hover:bg-gray-50'
+                   ? 'text-aether-blue border-aether-blue bg-blue-50/30 dark:bg-void-lighter/50' 
+                   : 'text-gray-700 dark:text-gray-300 border-transparent hover:text-aether-blue dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-void-lighter/30'
                }`}
              >
                {item.label}

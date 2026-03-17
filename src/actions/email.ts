@@ -77,7 +77,7 @@ export async function sendExternalEmail(
 
     return { success: false, error: 'Unknown email failure' };
   } catch (error: any) {
-    console.warn('AO_DIAGNOSTIC (sendExternalEmail Exception):', error.message || error);
+    console.error('Exception in sendExternalEmail:', error);
     return { success: false, error: error.message || 'Server error' };
   }
 }

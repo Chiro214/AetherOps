@@ -21,7 +21,7 @@ export default async function NavigationBar() {
   ];
 
   return (
-    <nav className="h-10 bg-white border-b border-gray-200 flex items-center px-4 flex-shrink-0 z-40 relative shadow-sm">
+    <nav className="h-10 bg-white dark:bg-void-light border-b border-gray-200 dark:border-void-lighter flex items-center px-4 flex-shrink-0 z-40 relative shadow-sm transition-colors duration-300">
       <MainNavClient navItems={NAV_ITEMS} />
     </nav>
   );

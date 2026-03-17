@@ -20,9 +20,12 @@ export default async function ObjectManagerPage() {
         </div>
         <div className="flex gap-2">
            <button className="px-3 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition-colors">Schema Builder</button>
-           <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0176D3] text-white text-sm font-medium rounded hover:bg-[#014486] transition-colors">
-             Create ▼
-           </button>
+           <Link 
+             href="/setup/object-manager/new"
+             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0176D3] text-white text-sm font-medium rounded hover:bg-[#014486] transition-colors shadow-sm active:scale-95"
+           >
+             Create
+           </Link>
         </div>
       </div>
 
