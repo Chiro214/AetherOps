@@ -18,10 +18,10 @@ ALTER TABLE public.user_preferences ENABLE ROW LEVEL SECURITY;
 -- Policy: Users can only see and edit their own preferences
 -- Assuming auth.uid() matches the id in sf_users or we proxy via server actions
 CREATE POLICY "Users can view own preferences" ON public.user_preferences
-  FOR SELECT USING (true); -- Server actions will handle the scoping for now since auth isn't fully wired
+  FOR SELECT USING (auth.uid() = user_id); -- Server actions will handle the scoping for now since auth isn't fully wired
 
 CREATE POLICY "Users can update own preferences" ON public.user_preferences
-  FOR UPDATE USING (true);
+  FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can insert own preferences" ON public.user_preferences
-  FOR INSERT WITH CHECK (true);
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
