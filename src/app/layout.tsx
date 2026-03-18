@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import CommandBar from "@/components/crm/CommandBar";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -29,7 +30,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `
+             __html: `
               (function() {
                 try {
                   var theme = localStorage.getItem('theme');
@@ -51,6 +52,7 @@ export default function RootLayout({
         className={`${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
         {children}
+        <CommandBar />
       </body>
     </html>
   );
