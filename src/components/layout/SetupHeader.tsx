@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Settings, Search, Bell, Grid } from 'lucide-react';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import ProfileDropdown from './ProfileDropdown';
+import AppLauncherClient from './AppLauncherClient';
 
 export default function SetupHeader() {
   return (
@@ -12,13 +13,7 @@ export default function SetupHeader() {
       
       {/* Left: Setup Branding */}
       <div className="flex items-center gap-4">
-        <Link 
-          href="/home"
-          className="p-1.5 text-gray-500 hover:text-aether-blue hover:bg-gray-100 dark:hover:bg-void-lighter rounded transition-colors"
-          title="Back to App"
-        >
-          <Grid size={20} />
-        </Link>
+        <AppLauncherClient apps={[]} userRole="System Administrator" />
         <div className="flex items-center gap-2">
            <Settings size={22} className="text-gray-600 dark:text-gray-400" />
            <span className="font-semibold text-gray-900 dark:text-gray-100 text-lg">Setup</span>

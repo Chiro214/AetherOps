@@ -22,14 +22,29 @@ export async function createUser(formData: FormData) {
   const roleId = formData.get('role_id') as string;
   const profileId = formData.get('profile_id') as string;
   const isActive = formData.get('is_active') === 'on';
+  const password = formData.get('password') as string;
 
   // Basic Server-Side Validation
-  if (!lastName || !alias || !email || !username) {
-    return { error: 'Missing required fields: Last Name, Alias, Email, or Username' };
+  if (!lastName || !alias || !email || !username || !password) {
+    return { error: 'Missing required fields: Last Name, Alias, Email, Username, or Password' };
   }
 
+  // 1. Create secure Auth User using Admin API
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+
+  if (authError || !authData.user) {
+    console.error('Error creating Auth user:', authError);
+    return { error: authError?.message || 'Failed to create secure auth identity' };
+  }
+
+  // 2. Insert into sf_users linking the new secure Auth ID
   // @ts-expect-error: Supabase client fails to infer generic tables without CLI regenerator
   const { error } = await supabaseAdmin.from('sf_users').insert({
+    id: authData.user.id,
     first_name: firstName,
     last_name: lastName,
     alias,

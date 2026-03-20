@@ -9,9 +9,12 @@ export default function NewUserForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // In a real implementation these would be fetched from sf_roles and sf_profiles via server components
-  const dummyRoles = [{ id: '1', name: 'CEO' }, { id: '2', name: 'VP of Sales' }];
-  const dummyProfiles = [{ id: '1', name: 'System Administrator' }, { id: '2', name: 'Standard User' }];
+  // Real profile IDs from the live database
+  const dummyRoles: any[] = []; // Currently empty in db
+  const dummyProfiles = [
+    { id: 'a0802420-96c6-461f-ab63-18722951ccf2', name: 'System Administrator' }, 
+    { id: 'de75a265-3981-43fc-a931-7fe8819f32d5', name: 'Standard User' }
+  ];
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -126,6 +129,16 @@ export default function NewUserForm() {
                  <div className="flex-1 max-w-[240px] flex items-stretch">
                    <div className="w-1 bg-red-600 rounded-l-sm mr-1"></div>
                    <input type="text" name="username" required className="flex-1 w-full border border-gray-300 rounded p-1.5 text-sm focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] outline-none" />
+                 </div>
+              </div>
+
+              <div className="flex items-start mt-4 border-t border-gray-100 pt-4">
+                 <label className="w-40 text-xs font-semibold text-gray-600 text-right pr-4 pt-1.5 flex items-center justify-end">
+                   Initial Password
+                 </label>
+                 <div className="flex-1 max-w-[240px] flex items-stretch">
+                   <div className="w-1 bg-red-600 rounded-l-sm mr-1"></div>
+                   <input type="password" name="password" required className="flex-1 w-full border border-gray-300 rounded p-1.5 text-sm focus:border-[#0176D3] focus:ring-1 focus:ring-[#0176D3] outline-none" placeholder="Required for Supabase Auth" />
                  </div>
               </div>
 

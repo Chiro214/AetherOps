@@ -4,6 +4,8 @@ import { Settings, Bell } from 'lucide-react';
 import GlobalSearch from '@/components/crm/GlobalSearch';
 import AppLauncherClient from './AppLauncherClient';
 import { getApps, getActiveAppCookie } from '@/actions/apps';
+import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import ProfileDropdown from './ProfileDropdown';
 import GlobalActionDropdown from './GlobalActionDropdown';
@@ -15,6 +17,28 @@ export default async function GlobalHeader() {
   const activeApp = apps.find((a: any) => a.id === activeAppId);
   const appName = activeApp ? (activeApp as any).name : 'AetherOps CRM';
 
+  // Securely fetch Role without violating RLS for UI logic
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  let userRole = 'Standard User'; // Default to lowest privilege UI
+  
+  if (user) {
+    const supabaseAdmin = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: userRecord } = await supabaseAdmin
+      .from('sf_users')
+      .select('*, sf_profiles(name)')
+      .eq('id', user.id)
+      .single();
+      
+    if ((userRecord as any)?.sf_profiles?.name) {
+      userRole = (userRecord as any).sf_profiles.name;
+    }
+  }
+
   return (
     <>
       {/* Salesforce Global Header */}
@@ -22,7 +46,7 @@ export default async function GlobalHeader() {
         
         {/* Left: App Launcher & Branding */}
         <div className="flex items-center gap-4">
-          <AppLauncherClient apps={apps} />
+          <AppLauncherClient apps={apps} userRole={userRole} />
           
           <div className="flex items-center gap-2 border-l border-gray-200 dark:border-void-lighter pl-4">
              <div className="w-8 h-8 bg-aether-blue rounded flex items-center justify-center text-white font-bold text-xs tracking-tighter">

@@ -4,11 +4,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Settings, LogOut, Shield, User } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ProfileDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const supabase = createClient();
 
   // Close when clicking outside
   useEffect(() => {
@@ -21,9 +23,10 @@ export default function ProfileDropdown() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    // For now, simulate logout and hard redirect to login
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     router.push('/login');
+    router.refresh();
   };
 
   return (
@@ -39,7 +42,7 @@ export default function ProfileDropdown() {
         <div className="absolute right-0 mt-2 w-56 bg-white/90 dark:bg-void-light/90 backdrop-blur-md rounded-xl shadow-xl border border-gray-200/50 dark:border-void-lighter z-[100] p-1.5 animate-in fade-in zoom-in-95 duration-200">
           <div className="px-3 py-2 border-b border-gray-100 dark:border-void-lighter mb-1">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Signed in as</p>
-            <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">admin@aetherops.test</p>
+            <p className="text-sm font-bold text-gray-900 dark:text-gray-100 truncate">Authenticated User</p>
           </div>
 
           <Link
