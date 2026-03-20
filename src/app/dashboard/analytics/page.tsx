@@ -79,12 +79,13 @@ export default function AnalyticsDashboardPage() {
             const { data: leadObj } = await supabase.from('sf_objects').select('id').eq('api_name','Lead').single();
             if (leadObj) {
               const { data: leadRecords } = await supabase.from('sf_records').select('record_data').eq('object_id', (leadObj as any).id);
-              let totalValue = 0;
-              leadRecords?.forEach((r: any) => {
-                 const v = r.record_data.estimated_value;
-                 if (typeof v === 'string') totalValue += parseFloat(v.replace(/[^0-9.-]+/g, "")) || 0;
-                 if (typeof v === 'number') totalValue += v;
-              });
+              const totalValue = (leadRecords || []).reduce((acc: number, r: any) => {
+                 const v = r.record_data?.estimated_value;
+                 if (v === null || v === undefined) return acc + 0;
+                 if (typeof v === 'number' && !isNaN(v)) return acc + v;
+                 if (typeof v === 'string') return acc + (parseFloat(v.replace(/[^0-9.-]+/g, "")) || 0);
+                 return acc + 0;
+              }, 0);
               if (totalValue > 0) numericAggregations['Total Pipeline Value'] = totalValue;
             }
         }
