@@ -4,7 +4,7 @@ export interface LeadData {
   email: string | null;
   phone: string | null;
   intent: string | null;
-  estimated_value: string | null;
+  estimated_value: number | null;
   status: string;
 }
 
@@ -21,7 +21,7 @@ Extract the following exact fields from the user's unstructured text regarding a
 - email (string or null)
 - phone (string or null)
 - intent (a concise summary of what they want, string or null)
-- estimated_value (their budget or expected value, string or null)
+- estimated_value (their budget or expected value. IMPORTANT: Return a pure numeric integer. Absolutely NO currency symbols ($, ₹), NO commas, and NO abbreviations like 10k or 5M. Convert "$10k" directly to 10000. If no value is mentioned, return null.)
 - status (string, default to "New" if not mentioned)
 
 Return ONLY valid JSON matching this exact structure. Do not include markdown formatting or extra text.`;

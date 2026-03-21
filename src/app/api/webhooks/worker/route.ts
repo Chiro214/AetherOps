@@ -7,6 +7,30 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } }
 );
 
+async function fetchWithRetry(url: string, options: any, maxRetries = 3, initialDelay = 1000) {
+  let lastError;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.status === 429 || response.status === 503) {
+        throw new Error('RATE_LIMIT');
+      }
+      return response;
+    } catch (err: any) {
+      lastError = err;
+      if (err.message === 'RATE_LIMIT') {
+        // Exponential backoff with jitter
+        const delay = initialDelay * Math.pow(2, i) + Math.random() * 1000;
+        console.warn(`[Worker] Rate limited. Retrying in ${Math.round(delay)}ms... (Attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastError;
+}
+
 export async function POST(request: Request) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -34,10 +58,10 @@ export async function POST(request: Request) {
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) throw new Error("GEMINI_API_KEY not found");
 
-      const systemPrompt = `You are a CRM Data Extraction Worker. Analyze payload and output JSON strictly with: first_name (string), last_name (string), email (string/null), intent (High/Medium/Low), estimated_value (number/null).
+      const systemPrompt = `You are a CRM Data Extraction Worker for AetherOps. Analyze payload and output JSON strictly with: first_name (string), last_name (string), email (string/null), intent (High/Medium/Low), estimated_value (number/null).
 When extracting the estimated_value, you must return a pure numeric integer. Absolutely NO currency symbols ($, ₹), NO commas, and NO abbreviations (like 10k or 5M). Convert "$10k" directly to 10000. If no value is mentioned, return null.`;
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -61,9 +85,6 @@ When extracting the estimated_value, you must return a pure numeric integer. Abs
         })
       });
 
-      if (response.status === 429 || response.status === 503) {
-        throw new Error('RATE_LIMIT');
-      }
       if (!response.ok) throw new Error(`Gemini Error`);
       const data = await response.json();
       const contentText = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -78,29 +99,27 @@ When extracting the estimated_value, you must return a pure numeric integer. Abs
           record_data: { ...parsedLead, status: "New", source: "webhook_engine" }
       }).select('id').single();
 
-      // 5. Generate Draft
-      const draftPrompt = `You are Chirag, the lead manager for DripSync, a premium event management company in Mumbai organizing exclusive club parties and concerts. You are reaching out to a new lead.
+      // 5. Generate Draft (New Persona: AetherOps CEO Outreach Agent)
+      const draftPrompt = `You are the autonomous AI Outreach Agent for AetherOps, a cutting-edge global CRM and SaaS platform. You are drafting an email on behalf of Chirag, the CEO.
 
-Task: Write an outreach email for ${parsedLead.first_name}.
-Lead Intent: ${parsedLead.intent}.
-Estimated Budget: ${parsedLead.estimated_value ? '$' + parsedLead.estimated_value : 'Not specified'}.
+Task: Write a high-stakes, hyper-professional B2B outreach email for ${parsedLead.first_name}.
+
+Context:
+- Lead Intent: ${parsedLead.intent}
+- Estimated Value: ${parsedLead.estimated_value ? '$' + parsedLead.estimated_value.toLocaleString() : 'Undisclosed'}
 
 Guidelines:
-- Highly personalize the opening sentence using their name and intent level.
-- Keep the email concise, professional, and slightly casual (no overly corporate fluff).
-- Directly reference their specific intent and estimated budget if provided.
-- End with a soft call to action to chat on WhatsApp or jump on a quick call.
+- Tone: Hyper-professional, sharp, and enterprise-grade. Write like a top-tier global tech executive. No corporate fluff.
+- Personalization: Directly reference their expressed intent and the identified budget/value.
+- Call to Action: End with a strong, frictionless request to schedule a global strategy call or view the platform demo.
 - Output ONLY the exact plain text of the email.`;
 
-      const draftRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+      const draftRes = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: draftPrompt }] }] })
       });
 
-      if (draftRes.status === 429 || draftRes.status === 503) {
-        throw new Error('RATE_LIMIT');
-      }
       if (!draftRes.ok) throw new Error(`Gemini Error: Draft Generation Failed`);
 
       const dData = await draftRes.json();
@@ -119,24 +138,10 @@ Guidelines:
       return NextResponse.json({ success: true, message: 'Processed' }, { status: 200 });
 
     } catch (err: any) {
-      if (err.message === 'RATE_LIMIT') {
-        const retries = logEntry.record_data.retry_count || 0;
-        const maxRetries = 3;
-        
-        if (retries < maxRetries) {
-          // Keep state as 'pending' but increment retry count
-          await supabaseAdmin.from('sf_records')
-            .update({ record_data: { ...logEntry.record_data, status: 'pending', retry_count: retries + 1 } })
-            .eq('id', log_id);
-          
-          // Throw the error so the queue provider knows to auto-retry with exponential backoff
-          throw err;
-        }
-      }
-
-      // If max retries exhausted or it's a structural error, mark as 'error'
+      // Final fallback for exhausted retries or other errors
       await supabaseAdmin.from('sf_records').update({ record_data: { ...logEntry.record_data, status: 'error', error: err.message } }).eq('id', log_id);
       return NextResponse.json({ error: 'Worker failed', details: err.message }, { status: 500 });
+    }
     }
   } catch (error: any) {
     return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
